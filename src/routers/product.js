@@ -2,6 +2,10 @@ const router = require("express").Router();
 
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
+    const { productIdx } = req.params;
+    const result = {
+        data: {},
+    };
     try {
     } catch (err) {}
 });
