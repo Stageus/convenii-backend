@@ -67,7 +67,7 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
             }
         );
 
-        res.cookie("accessToken", token, {
+        res.cookie("accessToken", token, { // 쿠키파서...
             httpOnly: true,
             secure: false
         });
@@ -75,9 +75,34 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
         res.sendStatus(201);
     } catch (error) {
         next(error)
-    } finally {
-
     }
 })
 
+//내 정보 보기 
+router.get("/", isLogin, async (req, res, next) => {
+    const idx = req.user.idx
+    const result = {
+        "data": null // 사용자 정보
+    }
+    try {
+        const sql = "SELECT * FROM account WHERE idx=$1"
+        const queryData = await queryModule(sql, [idx])
+
+        // if (queryData.length === 0) {
+        //     const error = new Error("해당하는 계정이 없음")
+        //     error.status = 404
+        //     throw error
+        // }
+        result.data = {
+            "idx": queryData[0].idx,
+            "email": queryData[0].email,
+            "pw": queryData[0].pw,
+            "nickname": queryData[0].nickname,
+            "created_at": queryData[0].created_at
+        }
+        res.status(200).send(result)
+    } catch (error) {
+        next(error)
+    }
+})
 module.exports = router
