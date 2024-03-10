@@ -3,6 +3,8 @@ require("dotenv").config();
 const express = require("express");
 const https = require("https");
 const app = express();
+require("dotenv").config()
+app.use(express.json());
 
 const accountApi = require("./src/routers/account");
 const bookmarkApi = require("./src/routers/bookmark");
@@ -18,9 +20,9 @@ const httpConfig = require("./src/config/httpsConfig");
 //Api---------------------------------------------------//
 
 app.use("/account", accountApi);
-app.use("/bookmark", bookmarkApi);
-app.use("/product", productApi);
-app.use("/review", reviewApi);
+// app.use("/bookmark", bookmarkApi);
+// app.use("/product", productApi);
+// app.use("/review", reviewApi);
 
 //error_handler---------------------------------//
 app.use((err, req, res, next) => {
