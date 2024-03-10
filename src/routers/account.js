@@ -105,4 +105,19 @@ router.get("/", isLogin, async (req, res, next) => {
         next(error)
     }
 })
+
+//회원 탈퇴하기
+router.delete("/", isLogin, async (req, res, next) => {
+    const idx = req.user.idx
+    try {
+        const sql = "UPDATE account SET deleted_at = NOW() WHERE idx = $1";
+        await queryModule(sql, [idx]);
+
+        res.clearCookie('token')
+        res.sendStatus(201);
+    } catch (error) {
+        next(error);
+    }
+})
+
 module.exports = router
