@@ -75,6 +75,8 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
         res.sendStatus(201);
     } catch (error) {
         next(error)
+    } finally {
+
     }
 })
 
