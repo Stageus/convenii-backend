@@ -124,8 +124,9 @@ router.delete("/", isLogin, async (req, res, next) => {
 })
 
 //비밀번호 변경하기 -> 1. 로그인 전 비밀번호 찾기(이땐 email이 body로 필요하지 않나요??), 2. 내 정보 수정에서 비밀번호 변경 --> (토큰이 존재할 경우)가 없어야 하지 않나용? 아님 case를 나눠서...
-router.put("/account/pw", async (req, res, next) => {
-
+//-> 로그인 전 비밀번호 변경은 token에 정보가 없으니까 email이 꼭 필요하지 않을까용?
+router.put("/account/pw", isLogin, checkCondition("pw", pwPattern), async (req, res, next) => {
+    const { pw } = req.body;
 
 })
 
