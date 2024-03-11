@@ -3,7 +3,7 @@ const router = require("express").Router();
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
     const { productIdx } = req.params;
-    const { company_infocountIdx } = a;
+    const { acountIdx } = a;
     const result = {
         data: null,
     };
@@ -18,7 +18,7 @@ router.get("/:productIdx", async (req, res, next) => {
                 score,
                 created_at,
                 CASE
-                    WHEN (SELECT COUNT(*) FROM bookmark WHERE product_idx  = $1 AND company_infocount_idx = $2 ) >= 1
+                    WHEN (SELECT COUNT(*) FROM bookmark WHERE product_idx  = $1 AND acount_idx = $2 ) >= 1
                     THEN 1
                     ELSE 0
                 END AS bookmarked
@@ -75,7 +75,7 @@ router.get("/:productIdx", async (req, res, next) => {
             ORDER BY 
                 month DESC   
             `;
-        const productQueryResult = await pgPool.query(productSql, [productIdx, company_infocountIdx]);
+        const productQueryResult = await pgPool.query(productSql, [productIdx, acountIdx]);
         const eventQueryResult = await pgPool.query(eventSql, [productIdx]);
 
         if (productQueryResult.rows.length == 0) {
@@ -107,8 +107,65 @@ router.get("/company/:companyIdx", async (req, res, next) => {
 });
 
 //상품 검색하기
-router.get("/company/search", async (req, res, next) => {
+router.get("/search", async (req, res, next) => {
+    const { keyword, eventFilter, categoryFilter } = req.query;
+    const { accountIdx } = a;
+    const result = {
+        data: null,
+    };
     try {
+        const sql = `
+            SELECT
+                p.idx,
+                p.name,
+                p.price,
+                p.image_url,
+                p.score,
+                p.created_at,
+                CASE
+                    WHEN bookmark.product_idx IS NOT NULL THEN 1
+                    ELSE 0
+                END AS bookmarked
+                COALESCE(json_object_agg(c.name,
+                                                CASE
+                                                    WHEN eh.start_date IS NOT NULL
+                                                    THEN e.type
+                                                    ELSE 'null'
+                                                END
+                                                    ), '{}') AS events
+            FROM
+                product p
+            LEFT JOIN
+                bookmark ON bookmark.product_idx = p.idx AND bookmark.account_idx = $1
+            LEFT JOIN
+                event_history ON event_history.idx = p.idx AND event_history.start_date >= date_trunc('month', current_date ) AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+            LEFT JOIN
+                event ON event.idx = event_history.event_idx
+            RIGHT JOIN
+                company ON event_history.company_idx = company.idx
+            WHERE
+                p.deleted_at IS NULL
+            AND
+                p.name like $2
+            AND
+                p.idx IN (
+                    SELECT idx
+                    FROM event_history
+                    JOIN
+                        event ON event.idx = event_history.event_idx
+                    WHERE event_history.name IN $4
+                )
+            AND   
+                p.category_idx IN (
+                    SELECT idx
+                    FROM category
+                    WHERE name IN $3
+                )
+            ORDER BY p.name
+        `;
+        const qeryResult = await pgPool.query(sql, [accountIdx, keyword, eventFilter, categoryFilter]);
+        result.data = queryResult.rows;
+        res.status(200).send(result);
     } catch (err) {}
 });
 
