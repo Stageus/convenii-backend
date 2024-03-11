@@ -9,6 +9,17 @@ const pwPattern = patternConfig.pwPattern;
 const nicknamePattern = patternConfig.nicknamePattern;
 const checkCondition = require("../middleware/checkCondition");
 const queryModule = require("../modules/queryModule");
+const isLogin = require("../middleware/isLogin");
+
+//이메일 인증번호 발급
+router.post("/account/verify-email/send", isLogin, async (req, res, next) => {
+
+})
+
+//이메일 인증확인
+router.post("/account/verify-email/check", async (req, res, next) => {
+
+})
 
 //회원가입
 router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), checkCondition("nickname", nicknamePattern), async (req, res, next) => {
@@ -70,8 +81,9 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
 })
 
 //내 정보 보기 
-router.get("/", async (req, res, next) => {
+router.get("/", isLogin, async (req, res, next) => {
     const idx = req.user.idx
+    console.log(idx);
     const result = {
         "data": null // 사용자 정보
     }
@@ -87,7 +99,7 @@ router.get("/", async (req, res, next) => {
         result.data = {
             "idx": queryData[0].idx,
             "email": queryData[0].email,
-            "pw": queryData[0].pw,
+            "pw": queryData[0].password,
             "nickname": queryData[0].nickname,
             "created_at": queryData[0].created_at
         }
@@ -98,17 +110,23 @@ router.get("/", async (req, res, next) => {
 })
 
 //회원 탈퇴하기
-router.delete("/", async (req, res, next) => {
-    const idx = req.user.idx
+router.delete("/", isLogin, async (req, res, next) => {
+    const idx = req.user.idx;
     try {
         const sql = "UPDATE account SET deleted_at = NOW() WHERE idx = $1";
         await queryModule(sql, [idx]);
 
-        res.clearCookie('token')
+        res.clearCookie('token'); // 이거 말고 토큰 어떻게 삭제...?
         res.sendStatus(201);
     } catch (error) {
         next(error);
     }
+})
+
+//비밀번호 변경하기 -> 1. 로그인 전 비밀번호 찾기(이땐 email이 body로 필요하지 않나요??), 2. 내 정보 수정에서 비밀번호 변경 --> (토큰이 존재할 경우)가 없어야 하지 않나용? 아님 case를 나눠서...
+router.put("/account/pw", async (req, res, next) => {
+
+
 })
 
 module.exports = router
