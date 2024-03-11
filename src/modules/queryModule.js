@@ -8,6 +8,7 @@ const queryModule = async (sql, params) => {
         const result = await client.query(sql, params);
         return result.rows;
     } catch (error) {
+        console.error("Error in queryModule:", error); // 에러를 콘솔에 출력
         throw error;
     } finally {
         if (client) {

@@ -17,7 +17,7 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
     try { // 인증된 email인지 아닌지 확인하는 법을 모르겠어요 ㅠ, rank_idx 입력 받아야 하지 않나요?? pwSame 입력 받아야 해요!
         const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1";
         const nicknameQueryData = await queryModule(nicknameSql, [nickname]);
-        const rank = 2; // 일시적으로 넣어놓음 rank
+        const rank = 1; // 일시적으로 넣어놓음 rank
 
         if (nicknameQueryData.length > 0) {
             const error = new Error("닉네임이 중복됨");
@@ -39,7 +39,7 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
     const { email, pw } = req.body;
     try {
         const trimEmail = email.trim();
-        const sql = "SELECT * FROM account WHERE email =$1 AND pw=$2";
+        const sql = "SELECT * FROM account WHERE email =$1 AND password=$2";
         const queryData = await queryModule(sql, [trimEmail, pw]);
 
         if (queryData.length == 0) {
@@ -48,15 +48,11 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
             throw error;
         }
 
-        const idx = queryData[0].idx;
-        const uniqueIdx = uuid.v4();
-
         const token = jwt.sign(
             {
-                "idx": idx,
+                "idx": queryData[0].idx,
                 "email": queryData[0].email,
                 "rank": queryData[0].rank_idx,
-                "uuid": uniqueIdx
             },
             process.env.SECRET_KEY,
             {
@@ -65,19 +61,16 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
             }
         );
 
-        res.cookie("accessToken", token, { // 쿠키파서...
-            httpOnly: true,
-            secure: false
+        res.status(200).send({
+            "accessToken": token
         });
-
-        res.sendStatus(201);
     } catch (error) {
-        next(error)
+        next(error);
     }
 })
 
 //내 정보 보기 
-router.get("/", isLogin, async (req, res, next) => {
+router.get("/", async (req, res, next) => {
     const idx = req.user.idx
     const result = {
         "data": null // 사용자 정보
@@ -105,7 +98,7 @@ router.get("/", isLogin, async (req, res, next) => {
 })
 
 //회원 탈퇴하기
-router.delete("/", isLogin, async (req, res, next) => {
+router.delete("/", async (req, res, next) => {
     const idx = req.user.idx
     try {
         const sql = "UPDATE account SET deleted_at = NOW() WHERE idx = $1";
