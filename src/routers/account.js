@@ -8,13 +8,11 @@ const emailPattern = patternConfig.emailPattern;
 const pwPattern = patternConfig.pwPattern;
 const nicknamePattern = patternConfig.nicknamePattern;
 const checkCondition = require("../middleware/checkCondition");
-const checkSame = require("../middleware/checkSame");
 const queryModule = require("../modules/queryModule");
 
 //회원가입
-router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), checkCondition("nickname", nicknamePattern), checkSame("pw", "pwSame"), async (req, res, next) => {
+router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), checkCondition("nickname", nicknamePattern), async (req, res, next) => {
     const { email, pw, nickname } = req.body;
-    console.log(email)
 
     try { // 인증된 email인지 아닌지 확인하는 법을 모르겠어요 ㅠ, rank_idx 입력 받아야 하지 않나요?? pwSame 입력 받아야 해요!
         const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1";
