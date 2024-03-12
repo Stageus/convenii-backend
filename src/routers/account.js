@@ -8,7 +8,7 @@ const emailPattern = patternConfig.emailPattern;
 const pwPattern = patternConfig.pwPattern;
 const nicknamePattern = patternConfig.nicknamePattern;
 const checkCondition = require("../middlewares/checkCondition");
-const queryModule = require("../modules/queryModule");
+const pgPool = require("../modules/pgPool");
 const isLogin = require("../middlewares/isLogin");
 
 //이메일 인증번호 발급
@@ -27,7 +27,7 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
 
     try { // 인증된 email인지 아닌지 확인하는 법을 모르겠어요 ㅠ, rank_idx 입력 받아야 하지 않나요?? pwSame 입력 받아야 해요!
         const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1"; // deleted 된 건지 확인해야 함
-        const nicknameQueryData = await queryModule(nicknameSql, [nickname]);
+        const nicknameQueryData = await pgPool.query(nicknameSql, [nickname]);
         const rank = 1; // 일시적으로 넣어놓음 rank
 
         if (nicknameQueryData.length > 0) {
@@ -37,7 +37,7 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
         }
 
         const insertSql = "INSERT INTO account (email,password,nickname,rank_idx) VALUES ($1,$2,$3,$4)";
-        await queryModule(insertSql, [email, pw, nickname, rank]);
+        await pgPool.query(insertSql, [email, pw, nickname, rank]);
 
         res.sendStatus(201);
     } catch (error) {
@@ -51,7 +51,7 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
     try {
         const trimEmail = email.trim();
         const sql = "SELECT * FROM account WHERE email =$1 AND password=$2";
-        const queryData = await queryModule(sql, [trimEmail, pw]);
+        const queryData = await pgPool.query(sql, [trimEmail, pw]);
 
         if (queryData.length == 0) {
             const error = new Error("로그인 실패");
@@ -89,7 +89,7 @@ router.get("/", isLogin, async (req, res, next) => {
     }
     try {
         const sql = "SELECT * FROM account WHERE idx=$1"
-        const queryData = await queryModule(sql, [idx])
+        const queryData = await pgPool.query(sql, [idx])
 
         // if (queryData.length === 0) {
         //     const error = new Error("해당하는 계정이 없음")
@@ -114,7 +114,7 @@ router.delete("/", isLogin, async (req, res, next) => {
     const idx = req.user.idx;
     try {
         const sql = "UPDATE account SET deleted_at = NOW() WHERE idx = $1";
-        await queryModule(sql, [idx]);
+        await pgPool.query(sql, [idx]);
 
         res.clearCookie('token'); // 이거 말고 토큰 어떻게 삭제...?
         res.sendStatus(201);
