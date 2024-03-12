@@ -3,7 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const https = require("https");
 const app = express();
-require("dotenv").config()
 app.use(express.json());
 
 const accountApi = require("./src/routers/account");
@@ -20,9 +19,9 @@ const httpConfig = require("./src/config/httpsConfig");
 //Api---------------------------------------------------//
 
 app.use("/account", accountApi);
-// app.use("/bookmark", bookmarkApi);
-// app.use("/product", productApi);
-// app.use("/review", reviewApi);
+app.use("/bookmark", bookmarkApi);
+app.use("/product", productApi);
+app.use("/review", reviewApi);
 
 //error_handler---------------------------------//
 app.use((err, req, res, next) => {
@@ -37,6 +36,6 @@ app.use((err, req, res, next) => {
 app.listen(HTTP_PORT, () => {
     console.log(`${HTTP_PORT}번에서 HTTP 웹서버 실행`);
 });
-https.createServer(httpConfig, app).listen(HTTPS_PORT, () => {
-    console.log(`${HTTPS_PORT}번에서 HTTPS 웹서버 실행`);
-});
+// https.createServer(httpConfig, app).listen(HTTPS_PORT, () => {
+//     console.log(`${HTTPS_PORT}번에서 HTTPS 웹서버 실행`);
+// });
