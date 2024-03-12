@@ -1,4 +1,4 @@
 module.exports = {
-    HTTP_PORT: process.env.HTTPPORT,
-    HTTPS_PORT: process.env.HTTPSPORT,
+    HTTP_PORT: process.env.HTTP_PORT,
+    HTTPS_PORT: process.env.HTTPS_PORT,
 };
