@@ -3,3 +3,4 @@ module.exports = {
     port: process.env.DB_REDIS_PORT,
     password: process.env.DB_REDIS_PASSWORD,
 };
+
