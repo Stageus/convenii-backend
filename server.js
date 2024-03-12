@@ -3,7 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const https = require("https");
 const app = express();
-app.use(express.json());
 
 const accountApi = require("./src/routers/account");
 const bookmarkApi = require("./src/routers/bookmark");
@@ -15,6 +14,7 @@ const { HTTP_PORT, HTTPS_PORT } = require("./src/config/portConfig");
 const httpConfig = require("./src/config/httpsConfig");
 
 //middleWare--------------------------------------------//
+app.use(express.json());
 
 //Api---------------------------------------------------//
 
