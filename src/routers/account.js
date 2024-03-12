@@ -7,9 +7,9 @@ const patternConfig = require("../config/patternConfig");
 const emailPattern = patternConfig.emailPattern;
 const pwPattern = patternConfig.pwPattern;
 const nicknamePattern = patternConfig.nicknamePattern;
-const checkCondition = require("../middleware/checkCondition");
+const checkCondition = require("../middlewares/checkCondition");
 const queryModule = require("../modules/queryModule");
-const isLogin = require("../middleware/isLogin");
+const isLogin = require("../middlewares/isLogin");
 
 //이메일 인증번호 발급
 router.post("/account/verify-email/send", isLogin, async (req, res, next) => {
