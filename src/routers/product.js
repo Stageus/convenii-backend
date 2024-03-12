@@ -3,7 +3,7 @@ const router = require("express").Router();
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
     const { productIdx } = req.params;
-    const { acountIdx } = a;
+    const { acountIdx } = req.body.token;
     const result = {
         data: null,
     };
@@ -109,7 +109,7 @@ router.get("/company/:companyIdx", async (req, res, next) => {
 //상품 검색하기
 router.get("/search", async (req, res, next) => {
     const { keyword, eventFilter, categoryFilter } = req.query;
-    const { accountIdx } = a;
+    const { accountIdx } = req.header.token;
     const result = {
         data: null,
     };
@@ -122,46 +122,25 @@ router.get("/search", async (req, res, next) => {
                 p.image_url,
                 p.score,
                 p.created_at,
-                CASE
-                    WHEN bookmark.product_idx IS NOT NULL THEN 1
-                    ELSE 0
-                END AS bookmarked
-                COALESCE(json_object_agg(c.name,
-                                                CASE
-                                                    WHEN eh.start_date IS NOT NULL
-                                                    THEN e.type
-                                                    ELSE 'null'
-                                                END
-                                                    ), '{}') AS events
+                COALESCE(bm.bookmarked, 0) AS bookmarked,
+                json_object_agg(c.name, COALESCE(e.type, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
             FROM
                 product p
+            CROSS JOIN
+                company c
             LEFT JOIN
-                bookmark ON bookmark.product_idx = p.idx AND bookmark.account_idx = $1
+                event_history eh ON eh.product_idx = p.idx AND eh.company_idx = c.idx
             LEFT JOIN
-                event_history ON event_history.idx = p.idx AND event_history.start_date >= date_trunc('month', current_date ) AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                event e ON e.idx = eh.event_idx AND eh.start_date >= date_trunc('month', current_date) AND eh.start_date < date_trunc('month', current_date) + interval '1 month'
             LEFT JOIN
-                event ON event.idx = event_history.event_idx
-            RIGHT JOIN
-                company ON event_history.company_idx = company.idx
+                (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
             WHERE
                 p.deleted_at IS NULL
-            AND
-                p.name like $2
-            AND
-                p.idx IN (
-                    SELECT idx
-                    FROM event_history
-                    JOIN
-                        event ON event.idx = event_history.event_idx
-                    WHERE event_history.name IN $4
-                )
-            AND   
-                p.category_idx IN (
-                    SELECT idx
-                    FROM category
-                    WHERE name IN $3
-                )
-            ORDER BY p.name
+                AND p.name LIKE $2
+            GROUP BY
+                p.idx, bm.bookmarked
+            ORDER BY
+                p.name; 
         `;
         const qeryResult = await pgPool.query(sql, [accountIdx, keyword, eventFilter, categoryFilter]);
         result.data = queryResult.rows;
