@@ -7,9 +7,9 @@ const patternConfig = require("../config/patternConfig");
 const emailPattern = patternConfig.emailPattern;
 const pwPattern = patternConfig.pwPattern;
 const nicknamePattern = patternConfig.nicknamePattern;
-const checkCondition = require("../middleware/checkCondition");
+const checkCondition = require("../middlewares/checkCondition");
 const queryModule = require("../modules/queryModule");
-const isLogin = require("../middleware/isLogin");
+const isLogin = require("../middlewares/isLogin");
 
 //이메일 인증번호 발급
 router.post("/account/verify-email/send", isLogin, async (req, res, next) => {
@@ -26,7 +26,7 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
     const { email, pw, nickname } = req.body;
 
     try { // 인증된 email인지 아닌지 확인하는 법을 모르겠어요 ㅠ, rank_idx 입력 받아야 하지 않나요?? pwSame 입력 받아야 해요!
-        const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1";
+        const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1"; // deleted 된 건지 확인해야 함
         const nicknameQueryData = await queryModule(nicknameSql, [nickname]);
         const rank = 1; // 일시적으로 넣어놓음 rank
 
