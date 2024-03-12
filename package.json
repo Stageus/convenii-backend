@@ -1,4 +1,5 @@
 {
+  "name": "convenii-backend",
   "dependencies": {
     "aws-sdk": "^2.1574.0",
     "bcrypt": "^5.1.1",
