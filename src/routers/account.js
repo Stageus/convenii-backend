@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
-const redis = require("redis").createClient();
+const redisClient = require("../modules/redisClient");
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
 
@@ -45,6 +45,19 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
         };
 
         await transporter.sendMail(mailOptions);
+
+        console.log("메일은 성공")
+        console.log(redisClient);
+
+        await redisClient.hSet(email, verificationCode, (err, reply) => {
+            if (err) {
+                console.log("오루");
+                return;
+            }
+            console.log(reply);
+            redisClient.expire(email, 180)
+        })
+
 
         res.status(201).send();
     } catch (error) {
@@ -92,7 +105,7 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
 
     try {
         const trimEmail = email.trim();
-        const sql = "SELECT * FROM account WHERE email =$1 AND password=$2";
+        const sql = "SELECT * FROM account WHERE email =$1 AND password=$2 AND deleted_at IS NULL";
         const queryData = await pgPool.query(sql, [trimEmail, pw]);
 
         if (queryData.rows.length == 0) {
