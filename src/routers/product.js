@@ -4,6 +4,63 @@ const pgPool = require("../modules/pgPool");
 router.get("/test", async (req, res, next) => {
     res.status(200).send("test");
 });
+
+//모든 상품 가져오기
+router.get("/all", async (req, res, next) => {
+    try {
+    } catch (err) {}
+});
+//회사 행사페이지 상품 가져오기
+router.get("/company/:companyIdx", async (req, res, next) => {
+    try {
+    } catch (err) {}
+});
+
+//상품 검색하기
+router.get("/search", async (req, res, next) => {
+    const { keyword, eventFilter, categoryFilter } = req.query;
+    const { accountIdx } = req.header.token;
+    const result = {
+        data: null,
+    };
+    try {
+        console.log("SDFDF");
+        const sql = `
+            SELECT
+                p.idx,
+                p.name,
+                p.price,
+                p.image_url,
+                p.score,
+                p.created_at,
+                COALESCE(bm.bookmarked, 0) AS bookmarked,
+                json_object_agg(c.name, COALESCE(e.type, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
+            FROM
+                product p
+            CROSS JOIN
+                company c
+            LEFT JOIN
+                event_history eh ON eh.product_idx = p.idx AND eh.company_idx = c.idx
+            LEFT JOIN
+                event e ON e.idx = eh.event_idx AND eh.start_date >= date_trunc('month', current_date) AND eh.start_date < date_trunc('month', current_date) + interval '1 month'
+            LEFT JOIN
+                (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
+            WHERE
+                p.deleted_at IS NULL
+                AND p.name LIKE $2
+            GROUP BY
+                p.idx, bm.bookmarked
+            ORDER BY
+                p.name; 
+        `;
+        const queryResult = await pgPool.query(sql, [accountIdx, keyword, eventFilter, categoryFilter]);
+        result.data = queryResult.rows;
+        res.status(200).send(result);
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
+});
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
     const { productIdx } = req.params;
@@ -81,7 +138,7 @@ router.get("/:productIdx", async (req, res, next) => {
             `;
         const productQueryResult = await pgPool.query(productSql, [productIdx, accountIdx]);
         const eventQueryResult = await pgPool.query(eventSql, [productIdx]);
-        console.log("@#@#");
+
         if (productQueryResult.rows.length == 0) {
             throw new Error();
         }
@@ -101,60 +158,6 @@ router.get("/:productIdx", async (req, res, next) => {
         next(err);
     }
 });
-
-//모든 상품 가져오기
-router.get("/all", async (req, res, next) => {
-    try {
-    } catch (err) {}
-});
-//회사 행사페이지 상품 가져오기
-router.get("/company/:companyIdx", async (req, res, next) => {
-    try {
-    } catch (err) {}
-});
-
-//상품 검색하기
-router.get("/search", async (req, res, next) => {
-    const { keyword, eventFilter, categoryFilter } = req.query;
-    const { accountIdx } = req.header.token;
-    const result = {
-        data: null,
-    };
-    try {
-        const sql = `
-            SELECT
-                p.idx,
-                p.name,
-                p.price,
-                p.image_url,
-                p.score,
-                p.created_at,
-                COALESCE(bm.bookmarked, 0) AS bookmarked,
-                json_object_agg(c.name, COALESCE(e.type, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
-            FROM
-                product p
-            CROSS JOIN
-                company c
-            LEFT JOIN
-                event_history eh ON eh.product_idx = p.idx AND eh.company_idx = c.idx
-            LEFT JOIN
-                event e ON e.idx = eh.event_idx AND eh.start_date >= date_trunc('month', current_date) AND eh.start_date < date_trunc('month', current_date) + interval '1 month'
-            LEFT JOIN
-                (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
-            WHERE
-                p.deleted_at IS NULL
-                AND p.name LIKE $2
-            GROUP BY
-                p.idx, bm.bookmarked
-            ORDER BY
-                p.name; 
-        `;
-        const queryResult = await pgPool.query(sql, [accountIdx, keyword, eventFilter, categoryFilter]);
-        result.data = queryResult.rows;
-        res.status(200).send(result);
-    } catch (err) {}
-});
-
 //상품 추가하기
 router.post("/", async (req, res, next) => {
     const { category, name, price, imageUrl, eventInfo } = req.body;
