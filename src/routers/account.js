@@ -2,6 +2,7 @@ const router = require("express").Router();
 const jwt = require("jsonwebtoken");
 const redis = require("redis").createClient();
 const uuid = require("uuid");
+const bcrypt = require("bcrypt");
 
 const patternConfig = require("../config/patternConfig");
 const emailPattern = patternConfig.emailPattern;
@@ -26,6 +27,8 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
     const { email, pw, nickname } = req.body;
 
     try { // 인증된 email인지 아닌지 확인하는 법을 모르겠어요 ㅠ, rank_idx 입력 받아야 하지 않나요?? pwSame 입력 받아야 해요!
+        const hashedPw = await bcrypt.hash(pw, 10);
+
         const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1"; // deleted 된 건지 확인해야 함
         const nicknameQueryData = await pgPool.query(nicknameSql, [nickname]);
         const rank = 1; // 일시적으로 넣어놓음 rank
@@ -37,7 +40,7 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
         }
 
         const insertSql = "INSERT INTO account (email,password,nickname,rank_idx) VALUES ($1,$2,$3,$4)";
-        await pgPool.query(insertSql, [email, pw, nickname, rank]);
+        await pgPool.query(insertSql, [email, hashedPw, nickname, rank]);
 
         res.status(201).send();
     } catch (error) {
@@ -92,18 +95,18 @@ router.get("/", loginAuth, async (req, res, next) => {
         const sql = "SELECT * FROM account WHERE idx=$1"
         const queryData = await pgPool.query(sql, [idx])
 
-        if (queryData.length === 0) {
+        if (queryData.rows.length === 0) {
             const error = new Error("해당하는 계정이 없음")
             error.status = 404
             throw error
         }
 
         result.data = {
-            "idx": queryData[0].idx,
-            "email": queryData[0].email,
-            "pw": queryData[0].password,
-            "nickname": queryData[0].nickname,
-            "created_at": queryData[0].created_at
+            "idx": queryData.rows[0].idx,
+            "email": queryData.rows[0].email,
+            "pw": queryData.rows[0].password,
+            "nickname": queryData.rows[0].nickname,
+            "created_at": queryData.rows[0].created_at
         }
         res.status(200).send(result)
     } catch (error) {
