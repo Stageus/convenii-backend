@@ -11,13 +11,30 @@ const nicknamePattern = patternConfig.nicknamePattern;
 const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
 const loginAuth = require("../middlewares/loginAuth");
+const authenticateToken = require("../middlewares/authenticateToken");
 const transporter = require("../modules/transporter");
 const generateVerificationCode = require("../modules/generateVerificationCode")
 
 //이메일 인증번호 발급
-router.post("/verify-email/send", checkCondition("email", emailPattern), async (req, res, next) => {
+router.post("/verify-email/send", authenticateToken, checkCondition("email", emailPattern), async (req, res, next) => {
     const { email } = req.body;
     try {
+        if (!req.user) { // 회원가입시
+            const emailSql = "SELECT email FROM account WHERE email = $1"; // deleted 된 건지 확인해야 함
+            const emailQueryData = await pgPool.query(emailSql, [email]);
+
+            if (emailQueryData.rows.length > 0) {
+                const error = new Error("이메일이 중복됨");
+                error.status = 400;
+                throw error;
+            }
+        } else { // 비번 변경시
+            if (req.user.email !== email) {
+                const error = new Error("본인 이메일이 아님");
+                error.status = 401;
+                throw error;
+            }
+        }
         const verificationCode = generateVerificationCode();
 
         const mailOptions = {

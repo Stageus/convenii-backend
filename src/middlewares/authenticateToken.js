@@ -1,24 +1,22 @@
 const jwt = require("jsonwebtoken");
 
-const isLogin = async (req, res, next) => {
-    console.log(req.headers)
+const authenticateToken = async (req, res, next) => {
     const token = req.headers.authorization;
+
     try {
         if (!token) {
-            throw new Error("no token");
+            next();
+            return;
         }
-
         jwt.verify(token, process.env.SECRET_KEY);
         const payload = token.split(".")[1];
         const convert = Buffer.from(payload, "base64");
         const data = JSON.parse(convert.toString());
         req.user = data;
-        next()
+        next();
     } catch (error) {
         const message = (() => {
-            if (error.message === "no token") {
-                return "토큰이 없음";
-            } else if (error.message === "jwt expired") {
+            if (error.message === "jwt expired") {
                 return "토큰이 끝남";
             } else if (error.message === "invalid token") {
                 return "토큰이 조작됨";
@@ -28,6 +26,6 @@ const isLogin = async (req, res, next) => {
         })();
         res.status(401).send({ message });
     }
-};
+}
 
-module.exports = isLogin;
+module.exports = authenticateToken;
