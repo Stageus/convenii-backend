@@ -12,7 +12,6 @@ const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
 const loginAuth = require("../middlewares/loginAuth");
 const transporter = require("../modules/transporter");
-const { Chatbot } = require("aws-sdk");
 
 //이메일 인증번호 발급
 router.post("/account/verify-email/send", loginAuth, checkCondition("email", emailPattern), async (req, res, next) => {
