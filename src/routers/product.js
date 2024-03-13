@@ -1,9 +1,13 @@
 const router = require("express").Router();
+const pgPool = require("../modules/pgPool");
 
+router.get("/test", async (req, res, next) => {
+    res.status(200).send("test");
+});
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
     const { productIdx } = req.params;
-    const { acountIdx } = req.body.token;
+    const { accountIdx } = 3; //req.body.token;
     const result = {
         data: null,
     };
@@ -18,7 +22,7 @@ router.get("/:productIdx", async (req, res, next) => {
                 score,
                 created_at,
                 CASE
-                    WHEN (SELECT COUNT(*) FROM bookmark WHERE product_idx  = $1 AND acount_idx = $2 ) >= 1
+                    WHEN (SELECT COUNT(*) FROM bookmark WHERE product_idx  = $1 AND account_idx = $2 ) >= 1
                     THEN 1
                     ELSE 0
                 END AS bookmarked
@@ -37,7 +41,7 @@ router.get("/:productIdx", async (req, res, next) => {
             ),
             event_array AS (
                 SELECT 
-                    to_char(eh.start_date, 'YYYY-MM') AS month,
+                    to_char(event_history.start_date, 'YYYY-MM') AS month,
                     company.name AS company_name,
                     CASE 
                         WHEN event.type = '할인' THEN CAST(event.price AS VARCHAR)
@@ -75,9 +79,9 @@ router.get("/:productIdx", async (req, res, next) => {
             ORDER BY 
                 month DESC   
             `;
-        const productQueryResult = await pgPool.query(productSql, [productIdx, acountIdx]);
+        const productQueryResult = await pgPool.query(productSql, [productIdx, accountIdx]);
         const eventQueryResult = await pgPool.query(eventSql, [productIdx]);
-
+        console.log("@#@#");
         if (productQueryResult.rows.length == 0) {
             throw new Error();
         }
@@ -92,7 +96,10 @@ router.get("/:productIdx", async (req, res, next) => {
         });
 
         res.status(200).send(result);
-    } catch (err) {}
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
 });
 
 //모든 상품 가져오기
@@ -142,7 +149,7 @@ router.get("/search", async (req, res, next) => {
             ORDER BY
                 p.name; 
         `;
-        const qeryResult = await pgPool.query(sql, [accountIdx, keyword, eventFilter, categoryFilter]);
+        const queryResult = await pgPool.query(sql, [accountIdx, keyword, eventFilter, categoryFilter]);
         result.data = queryResult.rows;
         res.status(200).send(result);
     } catch (err) {}
@@ -150,8 +157,33 @@ router.get("/search", async (req, res, next) => {
 
 //상품 추가하기
 router.post("/", async (req, res, next) => {
+    const { category, name, price, imageUrl, eventInfo } = req.body;
+
+    const client = await pgPool.connect();
+
     try {
-    } catch (err) {}
+        await client.query("BEGIN");
+
+        const productSql = `
+            INSERT INTO product (category_idx, name, price, image_url)
+            VALUES (
+                (SELECT idx FROM category WHERE name = $1),
+                $2,
+                $3,
+                $4
+            )
+            RETURNING idx
+        `;
+        const productQueryResult = await client.query(productSql, [category, name, price, imageUrl]);
+        const productIdx = productQueryResult.rows[0].idx;
+        eventInfo.forEach();
+
+        await client.query("COMMIT");
+        res.status(201).send();
+    } catch (err) {
+        await client.query("ROLLBACK");
+        next(err);
+    }
 });
 
 // productIdx 수정하기
