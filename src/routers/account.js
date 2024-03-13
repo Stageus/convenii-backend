@@ -11,10 +11,28 @@ const nicknamePattern = patternConfig.nicknamePattern;
 const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
 const loginAuth = require("../middlewares/loginAuth");
+const transporter = require("../modules/transporter");
+const { Chatbot } = require("aws-sdk");
 
 //이메일 인증번호 발급
-router.post("/account/verify-email/send", loginAuth, async (req, res, next) => {
+router.post("/account/verify-email/send", loginAuth, checkCondition("email", emailPattern), async (req, res, next) => {
+    const { email } = req.body;
+    try {
+        const verificationCode = generateVerificationCode();
 
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "이메일 인증",
+            text: `인증번호 : ${verificationCode}`
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(201).send();
+    } catch (error) {
+        next(error);
+    }
 })
 
 //이메일 인증확인
