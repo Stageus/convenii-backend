@@ -19,15 +19,16 @@ router.get("/company/:companyIdx", async (req, res, next) => {
 //상품 검색하기
 router.get("/search", async (req, res, next) => {
     const { keyword, eventFilter, categoryFilter } = req.query;
-    const { accountIdx } = req.header.token;
+    const { accountIdx } = 3; //req.body.token;
     const result = {
         data: null,
     };
     try {
-        console.log("SDFDF");
+        //검색어 필터링 sql
         const sql = `
             SELECT
                 p.idx,
+                p.category_idx,
                 p.name,
                 p.price,
                 p.image_url,
@@ -53,14 +54,53 @@ router.get("/search", async (req, res, next) => {
             ORDER BY
                 p.name; 
         `;
-        const queryResult = await pgPool.query(sql, [accountIdx, keyword, eventFilter, categoryFilter]);
-        result.data = queryResult.rows;
+        const catgegorySql = `SELECT idx FROM category WHERE name = ANY($1)`;
+        const categoryResult = await pgPool.query(catgegorySql, [categoryFilter]);
+        const queryResult = await pgPool.query(sql, [accountIdx, "%" + keyword + "%"]);
+        result.data = [];
+        // 필터링 후처리
+
+        for (let row = 0; row < queryResult.rows.length; row++) {
+            const productRow = queryResult.rows[row];
+            let canPush = 0;
+
+            //카테고리 필터
+            if (categoryResult.rows.length) {
+                for (let i = 0; i < categoryResult.rows.length; i++) {
+                    if (categoryResult.rows[i].idx === productRow.category_idx) {
+                        canPush = 1;
+                        break;
+                    }
+                }
+            }
+            //이벤트 필터
+            if (eventFilter.length) {
+                for (let i = 0; i < eventFilter; i++) {
+                    if (canPush === 1) {
+                        break;
+                    }
+
+                    for (let companyIdx = 0; companyIdx < productRow.event.length; companyIdx++) {
+                        if (eventFilter[i] === productRow.event[companyIdx]) {
+                            canPush = 1;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (canPush === 0) {
+                continue;
+            }
+
+            result.data.push(productRow);
+        }
         res.status(200).send(result);
     } catch (err) {
         console.log(err);
         next(err);
     }
 });
+
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
     const { productIdx } = req.params;
@@ -158,6 +198,7 @@ router.get("/:productIdx", async (req, res, next) => {
         next(err);
     }
 });
+
 //상품 추가하기
 router.post("/", async (req, res, next) => {
     const { category, name, price, imageUrl, eventInfo } = req.body;
