@@ -53,21 +53,20 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
         const sql = "SELECT * FROM account WHERE email =$1 AND password=$2";
         const queryData = await pgPool.query(sql, [trimEmail, pw]);
 
-        if (queryData.length == 0) {
+        if (queryData.rows.length == 0) {
             const error = new Error("로그인 실패");
             error.status = 401;
             throw error;
         }
-
         const token = jwt.sign(
             {
-                "idx": queryData[0].idx,
-                "email": queryData[0].email,
-                "rank": queryData[0].rank_idx,
+                "idx": queryData.rows[0].idx,
+                "email": queryData.rows[0].email,
+                "rank": queryData.rows[0].rank_idx,
             },
             process.env.SECRET_KEY,
             {
-                "issuer": queryData[0].nickname,
+                "issuer": queryData.rows[0].nickname,
                 "expiresIn": "10m" // 임시로 10분
             }
         );
