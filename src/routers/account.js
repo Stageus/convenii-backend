@@ -12,9 +12,10 @@ const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
 const loginAuth = require("../middlewares/loginAuth");
 const transporter = require("../modules/transporter");
+const generateVerificationCode = require("../modules/generateVerificationCode")
 
 //이메일 인증번호 발급
-router.post("/account/verify-email/send", loginAuth, checkCondition("email", emailPattern), async (req, res, next) => {
+router.post("/account/verify-email/send", checkCondition("email", emailPattern), async (req, res, next) => {
     const { email } = req.body;
     try {
         const verificationCode = generateVerificationCode();
