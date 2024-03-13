@@ -9,10 +9,10 @@ const pwPattern = patternConfig.pwPattern;
 const nicknamePattern = patternConfig.nicknamePattern;
 const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
-const isLogin = require("../middlewares/isLogin");
+const loginAuth = require("../middlewares/loginAuth");
 
 //이메일 인증번호 발급
-router.post("/account/verify-email/send", isLogin, async (req, res, next) => {
+router.post("/account/verify-email/send", loginAuth, async (req, res, next) => {
 
 })
 
@@ -80,7 +80,7 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
 })
 
 //내 정보 보기 
-router.get("/", isLogin, async (req, res, next) => {
+router.get("/", loginAuth, async (req, res, next) => {
     const idx = req.user.idx
     console.log(idx);
     const result = {
@@ -90,11 +90,12 @@ router.get("/", isLogin, async (req, res, next) => {
         const sql = "SELECT * FROM account WHERE idx=$1"
         const queryData = await pgPool.query(sql, [idx])
 
-        // if (queryData.length === 0) {
-        //     const error = new Error("해당하는 계정이 없음")
-        //     error.status = 404
-        //     throw error
-        // }
+        if (queryData.length === 0) {
+            const error = new Error("해당하는 계정이 없음")
+            error.status = 404
+            throw error
+        }
+
         result.data = {
             "idx": queryData[0].idx,
             "email": queryData[0].email,
@@ -109,7 +110,7 @@ router.get("/", isLogin, async (req, res, next) => {
 })
 
 //회원 탈퇴하기
-router.delete("/", isLogin, async (req, res, next) => {
+router.delete("/", loginAuth, async (req, res, next) => {
     const idx = req.user.idx;
     try {
         const sql = "UPDATE account SET deleted_at = NOW() WHERE idx = $1";
@@ -124,7 +125,9 @@ router.delete("/", isLogin, async (req, res, next) => {
 
 //비밀번호 변경하기 -> 1. 로그인 전 비밀번호 찾기(이땐 email이 body로 필요하지 않나요??), 2. 내 정보 수정에서 비밀번호 변경 --> (토큰이 존재할 경우)가 없어야 하지 않나용? 아님 case를 나눠서...
 //-> 로그인 전 비밀번호 변경은 token에 정보가 없으니까 email이 꼭 필요하지 않을까용?
-router.put("/account/pw", isLogin, checkCondition("pw", pwPattern), async (req, res, next) => {
+// -> 인증되면 redis에 email 넣기 + 입력으로 email 받기
+// -> loginAuth 없이도 토큰 정보 얻을 수 있는 미들웨어 생각해보기
+router.put("/account/pw", loginAuth, checkCondition("pw", pwPattern), async (req, res, next) => {
     const { pw } = req.body;
 
 })
