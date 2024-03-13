@@ -15,7 +15,7 @@ const transporter = require("../modules/transporter");
 const generateVerificationCode = require("../modules/generateVerificationCode")
 
 //이메일 인증번호 발급
-router.post("/account/verify-email/send", checkCondition("email", emailPattern), async (req, res, next) => {
+router.post("/verify-email/send", checkCondition("email", emailPattern), async (req, res, next) => {
     const { email } = req.body;
     try {
         const verificationCode = generateVerificationCode();
@@ -36,7 +36,7 @@ router.post("/account/verify-email/send", checkCondition("email", emailPattern),
 })
 
 //이메일 인증확인
-router.post("/account/verify-email/check", async (req, res, next) => {
+router.post("/verify-email/check", async (req, res, next) => {
 
 })
 
