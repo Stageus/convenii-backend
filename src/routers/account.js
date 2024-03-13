@@ -30,7 +30,7 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
         const nicknameQueryData = await pgPool.query(nicknameSql, [nickname]);
         const rank = 1; // 일시적으로 넣어놓음 rank
 
-        if (nicknameQueryData.length > 0) {
+        if (nicknameQueryData.rows.length > 0) {
             const error = new Error("닉네임이 중복됨");
             error.status = 400;
             throw error;
@@ -39,7 +39,7 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
         const insertSql = "INSERT INTO account (email,password,nickname,rank_idx) VALUES ($1,$2,$3,$4)";
         await pgPool.query(insertSql, [email, pw, nickname, rank]);
 
-        res.sendStatus(201);
+        res.status(201).send();
     } catch (error) {
         next(error);
     }
@@ -48,6 +48,10 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
 //로그인
 router.post("/login", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), async (req, res, next) => {
     const { email, pw } = req.body;
+    const result = {
+        data: null
+    }
+
     try {
         const trimEmail = email.trim();
         const sql = "SELECT * FROM account WHERE email =$1 AND password=$2";
@@ -71,9 +75,8 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
             }
         );
 
-        res.status(200).send({
-            "accessToken": token
-        });
+        result.data = { "accessToken": token }
+        res.status(200).send(result)
     } catch (error) {
         next(error);
     }
@@ -82,9 +85,8 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
 //내 정보 보기 
 router.get("/", loginAuth, async (req, res, next) => {
     const idx = req.user.idx
-    console.log(idx);
     const result = {
-        "data": null // 사용자 정보
+        "data": null
     }
     try {
         const sql = "SELECT * FROM account WHERE idx=$1"
@@ -116,8 +118,8 @@ router.delete("/", loginAuth, async (req, res, next) => {
         const sql = "UPDATE account SET deleted_at = NOW() WHERE idx = $1";
         await pgPool.query(sql, [idx]);
 
-        res.clearCookie('token'); // 이거 말고 토큰 어떻게 삭제...?
-        res.sendStatus(201);
+        //토큰 삭제 필요..?
+        res.status(201).send();
     } catch (error) {
         next(error);
     }
