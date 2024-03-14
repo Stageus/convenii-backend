@@ -2,6 +2,15 @@ const router = require("express").Router();
 const pgPool = require("../modules/pgPool");
 const COMPANY_SIZE = 3;
 
+router.get("/test", async (req, res, next) => {
+    const { category, name, price, imageUrl, eventInfo } = req.body;
+    try {
+        res.status(200).send(eventInfo[0].companyName);
+    } catch (err) {
+        next(err);
+    }
+});
+
 //모든 상품 가져오기
 router.get("/all", async (req, res, next) => {
     try {
@@ -40,7 +49,9 @@ router.get("/search", async (req, res, next) => {
             LEFT JOIN
                 event_history ON event_history.product_idx = p.idx AND event_history.company_idx = c.idx
             LEFT JOIN
-                event e ON e.idx = event_history.event_idx AND event_history.start_date >= date_trunc('month', current_date) AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                event e ON e.idx = event_history.event_idx
+                AND event_history.start_date >= date_trunc('month', current_date)
+                AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
             LEFT JOIN
                 (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
             WHERE
