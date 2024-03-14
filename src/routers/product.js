@@ -5,8 +5,11 @@ const COMPANY_SIZE = 3;
 router.get("/test", async (req, res, next) => {
     const { category, name, price, imageUrl, eventInfo } = req.body;
     try {
-        res.status(200).send(eventInfo[0].companyName);
+        const date = new Date();
+
+        res.status(200).send(date);
     } catch (err) {
+        console.log(err);
         next(err);
     }
 });
@@ -239,8 +242,19 @@ router.post("/", async (req, res, next) => {
         `;
         const productQueryResult = await client.query(productSql, [category, name, price, imageUrl]);
         const productIdx = productQueryResult.rows[0].idx;
-        eventInfo.forEach((eventRow) => {
+        const eventSql = `INSERT INTO event_history (company_idx, product_idx, event_idx, start_date, price)
+                          VALUES (
+                            (SELECT idx FROM company WHERE name = $1),
+                            $2,
+                            (SELECT idx FROM event WHERE type = $3),
+                            $4,
+                            $5
+                          )
+        `;
+        const today = new Date();
+        eventInfo.forEach(async (eventRow) => {
             const { companyName, eventType, price } = eventRow;
+            await client.query(eventSql, [companyName, productIdx, eventType, today, price]);
         });
 
         await client.query("COMMIT");
