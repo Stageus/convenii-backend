@@ -32,15 +32,15 @@ router.get("/search", async (req, res, next) => {
                 p.score,
                 p.created_at,
                 COALESCE(bm.bookmarked, 0) AS bookmarked,
-                json_object_agg(c.name, COALESCE(e.type, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
+                json_object_agg(c.name, COALESCE(CASE WHEN e.type = '할인' THEN event_history.price::text ELSE e.type END, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
             FROM
                 product p
             CROSS JOIN
                 company c
             LEFT JOIN
-                event_history eh ON eh.product_idx = p.idx AND eh.company_idx = c.idx
+                event_history ON event_history.product_idx = p.idx AND event_history.company_idx = c.idx
             LEFT JOIN
-                event e ON e.idx = eh.event_idx AND eh.start_date >= date_trunc('month', current_date) AND eh.start_date < date_trunc('month', current_date) + interval '1 month'
+                event e ON e.idx = event_history.event_idx AND event_history.start_date >= date_trunc('month', current_date) AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
             LEFT JOIN
                 (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
             WHERE
@@ -49,13 +49,14 @@ router.get("/search", async (req, res, next) => {
             GROUP BY
                 p.idx, bm.bookmarked
             ORDER BY
-                p.name; 
+                p.name;
         `;
         const catgegorySql = `SELECT idx FROM category WHERE name = ANY($1)`;
         const categoryResult = await pgPool.query(catgegorySql, [categoryFilter]);
         const queryResult = await pgPool.query(sql, [accountIdx, "%" + keyword + "%"]);
         result.data = [];
-        // 필터링 후처리
+
+        //필터링 후처리
 
         for (let row = 0; row < queryResult.rows.length; row++) {
             const productRow = queryResult.rows[row];
@@ -69,7 +70,14 @@ router.get("/search", async (req, res, next) => {
                         break;
                     }
                 }
+            } else {
+                canPush = 1;
             }
+
+            if (canPush === 0) {
+                continue;
+            }
+            canPush = 1;
             //이벤트 필터
             if (eventFilter.length) {
                 for (let i = 0; i < eventFilter; i++) {
@@ -84,6 +92,8 @@ router.get("/search", async (req, res, next) => {
                         }
                     }
                 }
+            } else {
+                canPush = 1;
             }
             if (canPush === 0) {
                 continue;
