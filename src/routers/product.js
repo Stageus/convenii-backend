@@ -1,9 +1,6 @@
 const router = require("express").Router();
 const pgPool = require("../modules/pgPool");
-
-router.get("/test", async (req, res, next) => {
-    res.status(200).send("test");
-});
+const COMPANY_SIZE = 3;
 
 //모든 상품 가져오기
 router.get("/all", async (req, res, next) => {
@@ -141,7 +138,7 @@ router.get("/:productIdx", async (req, res, next) => {
                     to_char(event_history.start_date, 'YYYY-MM') AS month,
                     company.name AS company_name,
                     CASE 
-                        WHEN event.type = '할인' THEN CAST(event.price AS VARCHAR)
+                        WHEN event.type = '할인' THEN CAST(event_history.price AS VARCHAR)
                         ELSE event.type 
                     END AS event_type
                 FROM 
@@ -165,6 +162,7 @@ router.get("/:productIdx", async (req, res, next) => {
                     company_array 
                 LEFT JOIN 
                     event_array  ON month_array.month = event_array.month AND company_array.name = event_array.company_name
+                ORDER BY month_array.month, company_name
             )
             SELECT 
                 month, 
@@ -220,7 +218,9 @@ router.post("/", async (req, res, next) => {
         `;
         const productQueryResult = await client.query(productSql, [category, name, price, imageUrl]);
         const productIdx = productQueryResult.rows[0].idx;
-        eventInfo.forEach();
+        eventInfo.forEach((eventRow) => {
+            const { companyName, eventType, price } = eventRow;
+        });
 
         await client.query("COMMIT");
         res.status(201).send();
