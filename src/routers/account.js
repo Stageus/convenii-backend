@@ -48,7 +48,7 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
         await transporter.sendMail(mailOptions);
 
         await redisClient.hset('emailVerificationCodes', email, verificationCode);
-        await redisClient.expire('emailVerificationCodes:' + email, 10); // 10초 설정
+        await redisClient.expire('emailVerificationCodes:' + email, 30); // 초 설정
 
         res.status(201).send();
     } catch (error) {
@@ -60,11 +60,10 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
 router.post("/verify-email/check", async (req, res, next) => {
     const { email, verificationCode } = req.body;
     try {
-        // Redis에서 인증번호 가져오는 부분 로깅
+        const ttl = await redisClient.ttl('emailVerificationCodes:' + email);
+        console.log(ttl); // 만료 시간이 되지도않는데 자꾸 -2가 나옴...
         const storedVerificationCode = await redisClient.hget('emailVerificationCodes', email);
-        console.log(`Retrieved verification code from Redis: ${storedVerificationCode}`);
 
-        console.log(storedVerificationCode);
         if (storedVerificationCode !== verificationCode) {
             const error = new Error("인증번호가 일치하지 않음");
             error.status = 401;
@@ -79,15 +78,17 @@ router.post("/verify-email/check", async (req, res, next) => {
 })
 
 //회원가입
+//soft delete된 이메일, 닉네임 사용 가능하게 해야 함
 router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), checkCondition("nickname", nicknamePattern), async (req, res, next) => {
     const { email, pw, nickname } = req.body;
 
-    try { // rank_idx 입력 받아야 하지 않나요?? 
+    try {
         const hashedPw = await bcrypt.hash(pw, 10);
 
         const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1 AND deleted_at IS NULL";
         const nicknameQueryData = await pgPool.query(nicknameSql, [nickname]);
-        const rank = 1; // 일시적으로 넣어놓음 rank
+
+        const rank = 1;
 
         if (nicknameQueryData.rows.length > 0) {
             const error = new Error("닉네임이 중복됨");
