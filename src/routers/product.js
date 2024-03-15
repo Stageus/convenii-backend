@@ -322,7 +322,21 @@ router.put("/:productIdx", async (req, res, next) => {
 
 //productIdx 삭제하기
 router.delete("/:productIdx", async (req, res, next) => {
+    const { productIdx } = req.params;
     try {
-    } catch (err) {}
+        const today = new Date();
+        const sql = `
+                UPDATE
+                    product
+                SET
+                    deleted_at = $1
+                WHERE
+                    idx = $2`;
+        await pgPool.query(sql, [today, productIdx]);
+        res.status(201).send();
+    } catch (err) {
+        await client.query("ROLLBACK");
+        next(err);
+    }
 });
 module.exports = router;
