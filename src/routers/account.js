@@ -44,14 +44,11 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
             text: `인증번호 : ${verificationCode}`
         };
 
+        console.log(verificationCode);
         await transporter.sendMail(mailOptions);
 
-        await redisClient.set(email, verificationCode, (err, reply) => {
-            if (err) {
-                return;
-            }
-            redisClient.expire(email, 180)
-        })
+        await redisClient.hset('emailVerificationCodes', email, verificationCode);
+        await redisClient.expire('emailVerificationCodes', email, 10);
 
         res.status(201).send();
     } catch (error) {
@@ -61,7 +58,22 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
 
 //이메일 인증확인
 router.post("/verify-email/check", async (req, res, next) => {
+    const { email, verificationCode } = req.body;
+    try {
+        const storedVerificationCode = await redisClient.hget('emailVerificationCodes', email);
 
+        console.log(storedVerificationCode);
+        if (storedVerificationCode !== verificationCode) {
+            const error = new Error("인증번호가 일치하지 않음");
+            error.status = 401;
+            throw error;
+        }
+
+        await redisClient.sadd('verifiedEmails', email);
+        res.status(201).send();
+    } catch (error) {
+        next(error);
+    }
 })
 
 //회원가입
