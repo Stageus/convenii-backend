@@ -46,18 +46,12 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
 
         await transporter.sendMail(mailOptions);
 
-        console.log("메일은 성공")
-        console.log(redisClient);
-
-        await redisClient.hSet(email, verificationCode, (err, reply) => {
+        await redisClient.set(email, verificationCode, (err, reply) => {
             if (err) {
-                console.log("오루");
                 return;
             }
-            console.log(reply);
             redisClient.expire(email, 180)
         })
-
 
         res.status(201).send();
     } catch (error) {
@@ -74,10 +68,10 @@ router.post("/verify-email/check", async (req, res, next) => {
 router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), checkCondition("nickname", nicknamePattern), async (req, res, next) => {
     const { email, pw, nickname } = req.body;
 
-    try { // 인증된 email인지 아닌지 확인하는 법을 모르겠어요 ㅠ, rank_idx 입력 받아야 하지 않나요?? pwSame 입력 받아야 해요!
+    try { // rank_idx 입력 받아야 하지 않나요?? 
         const hashedPw = await bcrypt.hash(pw, 10);
 
-        const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1"; // deleted 된 건지 확인해야 함
+        const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1 AND deleted_at IS NULL";
         const nicknameQueryData = await pgPool.query(nicknameSql, [nickname]);
         const rank = 1; // 일시적으로 넣어놓음 rank
 
@@ -87,8 +81,11 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
             throw error;
         }
 
+        console.log("뇽")
         const insertSql = "INSERT INTO account (email,password,nickname,rank_idx) VALUES ($1,$2,$3,$4)";
         await pgPool.query(insertSql, [email, hashedPw, nickname, rank]);
+
+        console.log("sbd")
 
         res.status(201).send();
     } catch (error) {
