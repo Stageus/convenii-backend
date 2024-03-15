@@ -48,7 +48,7 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
         await transporter.sendMail(mailOptions);
 
         await redisClient.hset('emailVerificationCodes', email, verificationCode);
-        await redisClient.expire('emailVerificationCodes', email, 10);
+        await redisClient.expire('emailVerificationCodes:' + email, 10); // 10초 설정
 
         res.status(201).send();
     } catch (error) {
@@ -60,7 +60,9 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
 router.post("/verify-email/check", async (req, res, next) => {
     const { email, verificationCode } = req.body;
     try {
+        // Redis에서 인증번호 가져오는 부분 로깅
         const storedVerificationCode = await redisClient.hget('emailVerificationCodes', email);
+        console.log(`Retrieved verification code from Redis: ${storedVerificationCode}`);
 
         console.log(storedVerificationCode);
         if (storedVerificationCode !== verificationCode) {
