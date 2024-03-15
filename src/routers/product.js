@@ -274,6 +274,43 @@ router.put("/:productIdx", async (req, res, next) => {
 
     try {
         await client.query("BEGIN");
+        const today = new Date();
+        const updateSql = `
+                UPDATE
+                    product
+                SET
+                    category_idx = (
+                        SELECT idx FROM category WHERE name = $1
+                    ),
+                    name = $2,
+                    price = $3,
+                    image_url = $4
+                WHERE
+                    idx = $5`;
+        const deleteCurrentEventSql = `
+                DELETE
+                FROM
+                    event_history
+                WHERE
+                    product_idx = $1
+                    AND to_char(start_date, 'YYYY-MM') = to_char($2, 'YYYY-MM')
+        `;
+        const eventSql = `INSERT INTO event_history (company_idx, product_idx, event_idx, start_date, price)
+                          VALUES (
+                            (SELECT idx FROM company WHERE name = $1),
+                            $2,
+                            (SELECT idx FROM event WHERE type = $3),
+                            $4,
+                            $5
+                          )
+        `;
+
+        await client.query(updateSql, [category, name, price, imageUrl, eventInfo]);
+        await client.query(deleteCurrentEventSql, [productIdx, today]);
+        eventInfo.forEach(async (eventRow) => {
+            const { companyName, eventType, price } = eventRow;
+            await client.query(eventSql, [companyName, productIdx, eventType, today, price]);
+        });
 
         await client.query("COMMIT");
         res.status(201).send();
