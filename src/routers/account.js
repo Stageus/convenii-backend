@@ -15,7 +15,14 @@ const authenticateToken = require("../middlewares/authenticateToken");
 const transporter = require("../modules/transporter");
 const generateVerificationCode = require("../modules/generateVerificationCode")
 
-//이메일 인증번호 발급
+// 토큰 발급도 모듈화 가능
+// 이메일 인증번호 발급
+// values 폴더 만들어서 patternConfig 안에 있는 거 옮기기 특정한 데이터들을... 아니면 벨리데이터에 전역변수로 넣기
+// db 라는 폴더에 연결하는 함수 넣기
+// 벨리데이터에서 전역변수를 o오브젝트로 지정하고, key만 보내기 checkCondition로 매개변수로 key를 받아서...
+
+
+// 로그인, 비로그인 시 api 2개로 나누기!
 router.post("/verify-email/send", authenticateToken, checkCondition("email", emailPattern), async (req, res, next) => {
     const { email } = req.body;
     try {
@@ -42,16 +49,17 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
             to: email,
             subject: "이메일 인증",
             text: `인증번호 : ${verificationCode}`
-        };
+        }; // 매개변수로 보내줘도 돼 (이 전체를 모듈로)
 
         console.log(verificationCode);
-        await transporter.sendMail(mailOptions);
+        await transporter.sendMail(mailOptions); // 여기까지 모듈로
 
-        await redisClient.hset('emailVerificationCodes', email, verificationCode);
-        await redisClient.expire('emailVerificationCodes:' + email, 30); // 초 설정
+        await redisClient.hset('emailVerificationCodes', email, verificationCode, { "EX": 30 }); // 여기에 설정
+        // await redisClient.expire('emailVerificationCodes:' + email, 30); // 초 설정
 
         res.status(201).send();
     } catch (error) {
+        console.log(error);
         next(error);
     }
 })
@@ -78,7 +86,7 @@ router.post("/verify-email/check", async (req, res, next) => {
 })
 
 //회원가입
-//soft delete된 이메일, 닉네임 사용 가능하게 해야 함
+//soft delete된 이메일, 닉네임 사용 가능하게 해야 함 ->
 router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), checkCondition("nickname", nicknamePattern), async (req, res, next) => {
     const { email, pw, nickname } = req.body;
 
@@ -136,7 +144,7 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
                 "issuer": queryData.rows[0].nickname,
                 "expiresIn": "10m" // 임시로 10분
             }
-        );
+        ); // 얘도 모듈로 만들기
 
         result.data = { "accessToken": token }
         res.status(200).send(result)
@@ -192,6 +200,8 @@ router.delete("/", loginAuth, async (req, res, next) => {
 //-> 로그인 전 비밀번호 변경은 token에 정보가 없으니까 email이 꼭 필요하지 않을까용?
 // -> 인증되면 redis에 email 넣기 + 입력으로 email 받기
 // -> loginAuth 없이도 토큰 정보 얻을 수 있는 미들웨어 생각해보기
+
+//2개로 나누기 (식별값도 넣기)
 router.put("/account/pw", loginAuth, checkCondition("pw", pwPattern), async (req, res, next) => {
     const { pw } = req.body;
 
