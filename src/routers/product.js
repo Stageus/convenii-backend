@@ -267,8 +267,20 @@ router.post("/", async (req, res, next) => {
 
 // productIdx 수정하기
 router.put("/:productIdx", async (req, res, next) => {
+    const { category, name, price, imageUrl, eventInfo } = req.body;
+    const { productIdx } = req.params;
+
+    const client = await pgPool.connect();
+
     try {
-    } catch (err) {}
+        await client.query("BEGIN");
+
+        await client.query("COMMIT");
+        res.status(201).send();
+    } catch (err) {
+        await client.query("ROLLBACK");
+        next(err);
+    }
 });
 
 //productIdx 삭제하기
