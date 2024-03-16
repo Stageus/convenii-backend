@@ -7,15 +7,13 @@ const bcrypt = require("bcrypt");
 const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
 const loginAuth = require("../middlewares/loginAuth");
-const transporter = require("../modules/transporter");
+const sendVerificationEmail = require("../modules/sendVerificationEmail");
 const generateVerificationCode = require("../modules/generateVerificationCode");
 const issueToken = require("../modules/issueToken");
 
-// 토큰 발급도 모듈화 가능
 // 이메일 인증번호 발급
 // values 폴더 만들어서 patternConfig 안에 있는 거 옮기기 특정한 데이터들을... 아니면 벨리데이터에 전역변수로 넣기
 // db 라는 폴더에 연결하는 함수 넣기
-// 벨리데이터에서 전역변수를 o오브젝트로 지정하고, key만 보내기 checkCondition로 매개변수로 key를 받아서...
 
 // 로그인, 비로그인 시 api 2개로 나누기!
 
@@ -33,15 +31,7 @@ router.post("/verify-email/send", checkCondition("email"), async (req, res, next
         }
         const verificationCode = generateVerificationCode();
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "이메일 인증",
-            text: `인증번호 : ${verificationCode}`,
-        };
-
-        console.log(verificationCode);
-        await transporter.sendMail(mailOptions);
+        await sendVerificationEmail(email, verificationCode);
 
         await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
         res.status(201).send();
@@ -63,15 +53,7 @@ router.post("/verify-email/send/login", loginAuth, checkCondition("email"), asyn
 
         const verificationCode = generateVerificationCode();
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "이메일 인증",
-            text: `인증번호 : ${verificationCode}`,
-        };
-
-        console.log(verificationCode);
-        await transporter.sendMail(mailOptions);
+        await sendVerificationEmail(email, verificationCode);
 
         await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
         res.status(201).send();
