@@ -23,28 +23,48 @@ const generateVerificationCode = require("../modules/generateVerificationCode")
 
 // 로그인, 비로그인 시 api 2개로 나누기!
 
-//이메일 인증번호 발급 (회원가입 시)
-router.post("/verify-email/send", authenticateToken, checkCondition("email", emailPattern), async (req, res, next) => {
+//이메일 인증번호 발급 (비로그인 상태시)
+router.post("/verify-email/send", checkCondition("email", emailPattern), async (req, res, next) => {
     const { email } = req.body;
     try {
-        if (!req.user) {
-            // 회원가입시
-            const emailSql = "SELECT email FROM account WHERE email = $1"; // deleted 된 건지 확인해야 함
-            const emailQueryData = await pgPool.query(emailSql, [email]);
+        const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL"; // deleted 된 건지 확인해야 함
+        const emailQueryData = await pgPool.query(emailSql, [email]);
 
-            if (emailQueryData.rows.length > 0) {
-                const error = new Error("이메일이 중복됨");
-                error.status = 400;
-                throw error;
-            }
-        } else {
-            // 비번 변경시
-            if (req.user.email !== email) {
-                const error = new Error("본인 이메일이 아님");
-                error.status = 401;
-                throw error;
-            }
+        if (emailQueryData.rows.length > 0) {
+            const error = new Error("이메일이 중복됨");
+            error.status = 400;
+            throw error;
         }
+        const verificationCode = generateVerificationCode();
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "이메일 인증",
+            text: `인증번호 : ${verificationCode}`,
+        };
+
+        console.log(verificationCode);
+        await transporter.sendMail(mailOptions);
+
+        await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 1300);
+        res.status(201).send();
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+});
+
+//이메일 인증번호 발급 (로그인 상태시)
+router.post("/verify-email/send/login", loginAuth, checkCondition("email", emailPattern), async (req, res, next) => {
+    const { email } = req.body;
+    try {
+        if (req.user.email !== email) {
+            const error = new Error("본인 이메일이 아님");
+            error.status = 401;
+            throw error;
+        }
+
         const verificationCode = generateVerificationCode();
 
         const mailOptions = {
