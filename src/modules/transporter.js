@@ -1,13 +1,17 @@
 const nodemailer = require("nodemailer");
+const mailerConfig = require("../config/mailerConfig");
 
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_SECURE,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    } // config로
-});
+async function sendVerificationEmail(email, verificationCode) {
+    const transporter = nodemailer.createTransport(mailerConfig);
 
-module.exports = transporter;
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "이메일 인증",
+        text: `인증번호 : ${verificationCode}`,
+    };
+
+    await transporter.sendMail(mailOptions);
+}
+
+module.exports = sendVerificationEmail;
