@@ -275,7 +275,6 @@ router.put("/:productIdx", async (req, res, next) => {
 
     try {
         await client.query("BEGIN");
-        const today = new Date();
         const updateSql = `
                 UPDATE
                     product
@@ -311,7 +310,7 @@ router.put("/:productIdx", async (req, res, next) => {
         await client.query(deleteCurrentEventSql, [productIdx]);
         eventInfo.forEach(async (eventRow) => {
             const { companyName, eventType, price } = eventRow;
-            await client.query(eventSql, [companyName, productIdx, eventType, sprice]);
+            await client.query(eventSql, [companyName, productIdx, eventType, price]);
         });
 
         await client.query("COMMIT");
