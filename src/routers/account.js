@@ -204,8 +204,14 @@ router.delete("/", loginAuth, async (req, res, next) => {
 // -> 인증되면 redis에 email 넣기 + 입력으로 email 받기
 // -> loginAuth 없이도 토큰 정보 얻을 수 있는 미들웨어 생각해보기
 
-//비밀번호 변경하기 (로그인 시)
-router.put("/account/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) => {
+
+/// 비로그인 상태에서 비밀번호 변경하기
+router.put("/pw", checkCondition("pw"), async (req, res, next) => {
+    const { email, pw } = req.body;
+});
+
+// 로그인 상태에서 비밀번호 변경하기
+router.put("/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) => {
     const { pw } = req.body;
     try {
         const members = await redisClient.smembers("verifiedEmails");
@@ -216,20 +222,15 @@ router.put("/account/pw/login", loginAuth, checkCondition("pw"), async (req, res
             error.status = 404;
             throw error;
         }
-        console.log("뇽");
-        const sql = "UPDATE account SET pw=$1 WHERE idx=$2";
-        await pgPool.query(sql, [pw, user.idx]);
+
+        const hashedPw = await bcrypt.hash(pw, 10);
+        const sql = "UPDATE account SET password=$1 WHERE idx=$2";
+        await pgPool.query(sql, [hashedPw, user.idx]);
 
         res.status(201).send();
     } catch (error) {
         next(error);
     }
-})
-
-//비밀번호 변경하기 (비로그인 시)
-router.put("/account/pw", checkCondition("pw"), async (req, res, next) => {
-    const { email, pw } = req.body;
-
-})
+});
 
 module.exports = router
