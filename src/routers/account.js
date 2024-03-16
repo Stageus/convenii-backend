@@ -12,7 +12,8 @@ const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
 const loginAuth = require("../middlewares/loginAuth");
 const transporter = require("../modules/transporter");
-const generateVerificationCode = require("../modules/generateVerificationCode")
+const generateVerificationCode = require("../modules/generateVerificationCode");
+const issueToken = require("../modules/issueToken");
 
 // 토큰 발급도 모듈화 가능
 // 이메일 인증번호 발급
@@ -47,7 +48,7 @@ router.post("/verify-email/send", checkCondition("email", emailPattern), async (
         console.log(verificationCode);
         await transporter.sendMail(mailOptions);
 
-        await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 1300);
+        await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
         res.status(201).send();
     } catch (error) {
         console.log(error);
@@ -77,7 +78,7 @@ router.post("/verify-email/send/login", loginAuth, checkCondition("email", email
         console.log(verificationCode);
         await transporter.sendMail(mailOptions);
 
-        await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 1300);
+        await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
         res.status(201).send();
     } catch (error) {
         console.log(error);
@@ -90,12 +91,6 @@ router.post("/verify-email/check", async (req, res, next) => {
     const { email, verificationCode } = req.body;
     try {
         const storedVerificationCode = await redisClient.get(`emailVerification:${email}`);
-
-        if (!storedVerificationCode) {
-            const error = new Error("인증번호가 만료되었거나 잘못되었습니다.");
-            error.status = 404; // 404 Not Found가 더 적절할 수 있음
-            throw error;
-        }
 
         if (storedVerificationCode !== verificationCode) {
             const error = new Error("인증번호가 일치하지 않음");
@@ -158,21 +153,23 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
             error.status = 401;
             throw error;
         }
-        const token = jwt.sign(
-            {
-                "idx": queryData.rows[0].idx,
-                "email": queryData.rows[0].email,
-                "rank": queryData.rows[0].rank_idx,
-            },
-            process.env.SECRET_KEY,
-            {
-                "issuer": queryData.rows[0].nickname,
-                "expiresIn": "10m" // 임시로 10분
-            }
-        ); // 얘도 모듈로 만들기
+        const user = queryData.rows[0];
 
-        result.data = { "accessToken": token }
-        res.status(200).send(result)
+        const tokenPayload = {
+            "idx": user.idx,
+            "email": user.email,
+            "rank": user.rank_idx
+        };
+
+        const tokenOptions = {
+            "issuer": user.nickname,
+            "expiresIn": "10m" // 임시로 10분
+        }
+
+        const accessToken = issueToken(tokenPayload, tokenOptions);
+
+        result.data = { "accessToken": accessToken };
+        res.status(200).send(result);
     } catch (error) {
         next(error);
     }
