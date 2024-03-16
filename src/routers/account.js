@@ -77,7 +77,7 @@ router.post("/verify-email/check", async (req, res, next) => {
             throw error;
         }
 
-        await redisClient.sadd("verifiedEmails", email);
+        await redisClient.set(`verifiedEmails:${email}`, "verified", "EX", 1800);
         res.status(201).send();
     } catch (error) {
         next(error);
@@ -91,6 +91,14 @@ router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("
     const { email, pw, nickname } = req.body;
 
     try {
+        const verified = await redisClient.get(`verifiedEmails:${email}`);
+
+        if (!verified) {
+            const error = new Error("인증되지 않은 이메일임");
+            error.status = 403;
+            throw error;
+        }
+
         const hashedPw = await bcrypt.hash(pw, 10);
 
         const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1 AND deleted_at IS NULL";
@@ -208,18 +216,19 @@ router.delete("/", loginAuth, async (req, res, next) => {
 /// 비로그인 상태에서 비밀번호 변경하기
 router.put("/pw", checkCondition("pw"), async (req, res, next) => {
     const { email, pw } = req.body;
+
 });
 
 // 로그인 상태에서 비밀번호 변경하기
 router.put("/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) => {
     const { pw } = req.body;
     try {
-        const members = await redisClient.smembers("verifiedEmails");
         const user = req.user;
+        const verified = await redisClient.get(`verifiedEmails:${user.email}`);
 
-        if (!members.includes(user.email)) {
+        if (!verified) {
             const error = new Error("인증되지 않은 이메일임");
-            error.status = 404;
+            error.status = 403;
             throw error;
         }
 
