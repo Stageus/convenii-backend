@@ -4,10 +4,6 @@ const redisClient = require("../modules/redisClient");
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
 
-const patternConfig = require("../config/patternConfig");
-const emailPattern = patternConfig.emailPattern;
-const pwPattern = patternConfig.pwPattern;
-const nicknamePattern = patternConfig.nicknamePattern;
 const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
 const loginAuth = require("../middlewares/loginAuth");
@@ -24,7 +20,7 @@ const issueToken = require("../modules/issueToken");
 // 로그인, 비로그인 시 api 2개로 나누기!
 
 //이메일 인증번호 발급 (비로그인 상태시)
-router.post("/verify-email/send", checkCondition("email", emailPattern), async (req, res, next) => {
+router.post("/verify-email/send", checkCondition("email"), async (req, res, next) => {
     const { email } = req.body;
     try {
         const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL"; // deleted 된 건지 확인해야 함
@@ -56,7 +52,7 @@ router.post("/verify-email/send", checkCondition("email", emailPattern), async (
 });
 
 //이메일 인증번호 발급 (로그인 상태시)
-router.post("/verify-email/send/login", loginAuth, checkCondition("email", emailPattern), async (req, res, next) => {
+router.post("/verify-email/send/login", loginAuth, checkCondition("email"), async (req, res, next) => {
     const { email } = req.body;
     try {
         if (req.user.email !== email) {
@@ -106,7 +102,7 @@ router.post("/verify-email/check", async (req, res, next) => {
 
 //회원가입
 //soft delete된 이메일, 닉네임 사용 가능하게 해야 함 ->
-router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), checkCondition("nickname", nicknamePattern), async (req, res, next) => {
+router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("nickname"), async (req, res, next) => {
     const { email, pw, nickname } = req.body;
 
     try {
@@ -136,7 +132,7 @@ router.post("/", checkCondition("email", emailPattern), checkCondition("pw", pwP
 })
 
 //로그인
-router.post("/login", checkCondition("email", emailPattern), checkCondition("pw", pwPattern), async (req, res, next) => {
+router.post("/login", checkCondition("email"), checkCondition("pw"), async (req, res, next) => {
     const { email, pw } = req.body;
     const result = {
         data: null
@@ -230,7 +226,7 @@ router.delete("/", loginAuth, async (req, res, next) => {
 // -> loginAuth 없이도 토큰 정보 얻을 수 있는 미들웨어 생각해보기
 
 //2개로 나누기 (식별값도 넣기)
-router.put("/account/pw", loginAuth, checkCondition("pw", pwPattern), async (req, res, next) => {
+router.put("/account/pw", loginAuth, checkCondition("pw"), async (req, res, next) => {
     const { pw } = req.body;
 
 })
