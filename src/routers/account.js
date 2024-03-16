@@ -31,6 +31,7 @@ router.post("/verify-email/send", checkCondition("email"), async (req, res, next
         }
         const verificationCode = generateVerificationCode();
 
+        console.log(verificationCode);
         await sendVerificationEmail(email, verificationCode);
 
         await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
@@ -53,6 +54,7 @@ router.post("/verify-email/send/login", loginAuth, checkCondition("email"), asyn
 
         const verificationCode = generateVerificationCode();
 
+        console.log(verificationCode);
         await sendVerificationEmail(email, verificationCode);
 
         await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
@@ -83,6 +85,7 @@ router.post("/verify-email/check", async (req, res, next) => {
 });
 
 //회원가입
+//인증된 이메일만
 //soft delete된 이메일, 닉네임 사용 가능하게 해야 함 ->
 router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("nickname"), async (req, res, next) => {
     const { email, pw, nickname } = req.body;
@@ -93,19 +96,14 @@ router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("
         const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1 AND deleted_at IS NULL";
         const nicknameQueryData = await pgPool.query(nicknameSql, [nickname]);
 
-        const rank = 1;
-
         if (nicknameQueryData.rows.length > 0) {
             const error = new Error("닉네임이 중복됨");
             error.status = 400;
             throw error;
         }
 
-        console.log("뇽")
-        const insertSql = "INSERT INTO account (email,password,nickname,rank_idx) VALUES ($1,$2,$3,$4)";
-        await pgPool.query(insertSql, [email, hashedPw, nickname, rank]);
-
-        console.log("sbd")
+        const insertSql = "INSERT INTO account (email,password,nickname) VALUES ($1,$2,$3)";
+        await pgPool.query(insertSql, [email, hashedPw, nickname]);
 
         res.status(201).send();
     } catch (error) {
@@ -178,7 +176,6 @@ router.get("/", loginAuth, async (req, res, next) => {
         result.data = {
             "idx": queryData.rows[0].idx,
             "email": queryData.rows[0].email,
-            "pw": queryData.rows[0].password,
             "nickname": queryData.rows[0].nickname,
             "created_at": queryData.rows[0].created_at
         }
@@ -207,9 +204,31 @@ router.delete("/", loginAuth, async (req, res, next) => {
 // -> 인증되면 redis에 email 넣기 + 입력으로 email 받기
 // -> loginAuth 없이도 토큰 정보 얻을 수 있는 미들웨어 생각해보기
 
-//2개로 나누기 (식별값도 넣기)
-router.put("/account/pw", loginAuth, checkCondition("pw"), async (req, res, next) => {
+//비밀번호 변경하기 (로그인 시)
+router.put("/account/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) => {
     const { pw } = req.body;
+    try {
+        const members = await redisClient.smembers("verifiedEmails");
+        const user = req.user;
+
+        if (!members.includes(user.email)) {
+            const error = new Error("인증되지 않은 이메일임");
+            error.status = 404;
+            throw error;
+        }
+        console.log("뇽");
+        const sql = "UPDATE account SET pw=$1 WHERE idx=$2";
+        await pgPool.query(sql, [pw, user.idx]);
+
+        res.status(201).send();
+    } catch (error) {
+        next(error);
+    }
+})
+
+//비밀번호 변경하기 (비로그인 시)
+router.put("/account/pw", checkCondition("pw"), async (req, res, next) => {
+    const { email, pw } = req.body;
 
 })
 
