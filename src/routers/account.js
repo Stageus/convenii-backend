@@ -11,7 +11,6 @@ const nicknamePattern = patternConfig.nicknamePattern;
 const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
 const loginAuth = require("../middlewares/loginAuth");
-const authenticateToken = require("../middlewares/authenticateToken");
 const transporter = require("../modules/transporter");
 const generateVerificationCode = require("../modules/generateVerificationCode")
 
@@ -23,10 +22,13 @@ const generateVerificationCode = require("../modules/generateVerificationCode")
 
 
 // 로그인, 비로그인 시 api 2개로 나누기!
+
+//이메일 인증번호 발급 (회원가입 시)
 router.post("/verify-email/send", authenticateToken, checkCondition("email", emailPattern), async (req, res, next) => {
     const { email } = req.body;
     try {
-        if (!req.user) { // 회원가입시
+        if (!req.user) {
+            // 회원가입시
             const emailSql = "SELECT email FROM account WHERE email = $1"; // deleted 된 건지 확인해야 함
             const emailQueryData = await pgPool.query(emailSql, [email]);
 
@@ -35,7 +37,8 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
                 error.status = 400;
                 throw error;
             }
-        } else { // 비번 변경시
+        } else {
+            // 비번 변경시
             if (req.user.email !== email) {
                 const error = new Error("본인 이메일이 아님");
                 error.status = 401;
@@ -48,29 +51,31 @@ router.post("/verify-email/send", authenticateToken, checkCondition("email", ema
             from: process.env.EMAIL_USER,
             to: email,
             subject: "이메일 인증",
-            text: `인증번호 : ${verificationCode}`
-        }; // 매개변수로 보내줘도 돼 (이 전체를 모듈로)
+            text: `인증번호 : ${verificationCode}`,
+        };
 
         console.log(verificationCode);
-        await transporter.sendMail(mailOptions); // 여기까지 모듈로
+        await transporter.sendMail(mailOptions);
 
-        await redisClient.hset('emailVerificationCodes', email, verificationCode, { "EX": 30 }); // 여기에 설정
-        // await redisClient.expire('emailVerificationCodes:' + email, 30); // 초 설정
-
+        await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 1300);
         res.status(201).send();
     } catch (error) {
         console.log(error);
         next(error);
     }
-})
+});
 
 //이메일 인증확인
 router.post("/verify-email/check", async (req, res, next) => {
     const { email, verificationCode } = req.body;
     try {
-        const ttl = await redisClient.ttl('emailVerificationCodes:' + email);
-        console.log(ttl); // 만료 시간이 되지도않는데 자꾸 -2가 나옴...
-        const storedVerificationCode = await redisClient.hget('emailVerificationCodes', email);
+        const storedVerificationCode = await redisClient.get(`emailVerification:${email}`);
+
+        if (!storedVerificationCode) {
+            const error = new Error("인증번호가 만료되었거나 잘못되었습니다.");
+            error.status = 404; // 404 Not Found가 더 적절할 수 있음
+            throw error;
+        }
 
         if (storedVerificationCode !== verificationCode) {
             const error = new Error("인증번호가 일치하지 않음");
@@ -78,12 +83,12 @@ router.post("/verify-email/check", async (req, res, next) => {
             throw error;
         }
 
-        await redisClient.sadd('verifiedEmails', email);
+        await redisClient.sadd("verifiedEmails", email);
         res.status(201).send();
     } catch (error) {
         next(error);
     }
-})
+});
 
 //회원가입
 //soft delete된 이메일, 닉네임 사용 가능하게 해야 함 ->

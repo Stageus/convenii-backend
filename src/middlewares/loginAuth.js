@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 
 const isLogin = async (req, res, next) => {
-    console.log(req.headers)
     const token = req.headers.authorization;
     try {
         if (!token) {
