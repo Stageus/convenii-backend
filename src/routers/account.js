@@ -21,7 +21,6 @@ const issueToken = require("../modules/issueToken");
 // db 라는 폴더에 연결하는 함수 넣기
 // 벨리데이터에서 전역변수를 o오브젝트로 지정하고, key만 보내기 checkCondition로 매개변수로 key를 받아서...
 
-
 // 로그인, 비로그인 시 api 2개로 나누기!
 
 //이메일 인증번호 발급 (비로그인 상태시)
@@ -145,15 +144,22 @@ router.post("/login", checkCondition("email", emailPattern), checkCondition("pw"
 
     try {
         const trimEmail = email.trim();
-        const sql = "SELECT * FROM account WHERE email =$1 AND password=$2 AND deleted_at IS NULL";
-        const queryData = await pgPool.query(sql, [trimEmail, pw]);
+        const sql = "SELECT * FROM account WHERE email =$1 AND deleted_at IS NULL";
+        const queryData = await pgPool.query(sql, [trimEmail]);
+        const user = queryData.rows[0];
 
         if (queryData.rows.length == 0) {
             const error = new Error("로그인 실패");
             error.status = 401;
             throw error;
         }
-        const user = queryData.rows[0];
+
+        const passwordMatch = await bcrypt.compare(pw, user.password);
+        if (!passwordMatch) {
+            const error = new Error("로그인 실패");
+            error.status = 401;
+            throw error;
+        }
 
         const tokenPayload = {
             "idx": user.idx,
