@@ -60,6 +60,7 @@ router.get("/search", async (req, res, next) => {
             WHERE
                 p.deleted_at IS NULL
                 AND p.name LIKE $2
+                AND event_history
             GROUP BY
                 p.idx, bm.bookmarked
             ORDER BY
@@ -293,23 +294,24 @@ router.put("/:productIdx", async (req, res, next) => {
                     event_history
                 WHERE
                     product_idx = $1
-                    AND to_char(start_date, 'YYYY-MM') = to_char($2, 'YYYY-MM')
+                    AND start_date >= date_trunc('month', current_date)
+                    AND start_date < date_trunc('month', current_date) + interval '1 month'
         `;
         const eventSql = `INSERT INTO event_history (company_idx, product_idx, event_idx, start_date, price)
                           VALUES (
                             (SELECT idx FROM company WHERE name = $1),
                             $2,
                             (SELECT idx FROM event WHERE type = $3),
-                            $4,
-                            $5
+                            current_date,
+                            $4
                           )
         `;
 
         await client.query(updateSql, [category, name, price, imageUrl, eventInfo]);
-        await client.query(deleteCurrentEventSql, [productIdx, today]);
+        await client.query(deleteCurrentEventSql, [productIdx]);
         eventInfo.forEach(async (eventRow) => {
             const { companyName, eventType, price } = eventRow;
-            await client.query(eventSql, [companyName, productIdx, eventType, today, price]);
+            await client.query(eventSql, [companyName, productIdx, eventType, sprice]);
         });
 
         await client.query("COMMIT");
