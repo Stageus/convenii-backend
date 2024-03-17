@@ -74,7 +74,7 @@ router.get("/company/:companyIdx", async (req, res, next) => {
                 eh.product_idx,
                 SUM(
                     CASE
-                        WHEN c.idx = $1 THEN e.priority * 2
+                        WHEN c.idx = $1 THEN e.priority * ${COMPANY_SIZE - 1}
                         ELSE -e.priority
                     END
                 ) AS p_score
