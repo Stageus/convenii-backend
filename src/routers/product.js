@@ -53,6 +53,7 @@ router.get("/all", async (req, res, next) => {
         `;
         const queryResult = await pgPool.query(sql, [accountIdx]);
         result.data = queryResult.rows;
+
         res.status(200).send(result);
     } catch (err) {
         console.log(err);
@@ -61,8 +62,71 @@ router.get("/all", async (req, res, next) => {
 });
 //회사 행사페이지 상품 가져오기
 router.get("/company/:companyIdx", async (req, res, next) => {
+    const { companyIdx } = req.params;
+    const { accountIdx } = 3; //req.body.token;
+    const result = {
+        data: null,
+    };
     try {
-    } catch (err) {}
+        const sql = `
+        WITH event_priority AS (
+            SELECT
+                eh.product_idx,
+                SUM(
+                    CASE
+                        WHEN c.idx = $1 THEN e.priority * 2
+                        ELSE -e.priority
+                    END
+                ) AS p_score
+            FROM
+                event_history eh
+            JOIN
+                company c ON eh.company_idx = c.idx
+            JOIN
+                event e ON eh.event_idx = e.idx
+            WHERE
+                eh.start_date >= date_trunc('month', current_date)
+                AND eh.start_date < date_trunc('month', current_date) + interval '1 month'
+            GROUP BY
+                eh.product_idx
+        ),
+        product_info AS (
+            SELECT
+                p.idx,
+                p.category_idx,
+                p.name,
+                p.price,
+                p.image_url,
+                p.score,
+                p.created_at,
+                COALESCE(ep.p_score, 0) AS p_score,
+                CASE WHEN bm.product_idx IS NOT NULL THEN true ELSE false END AS is_bookmarked
+            FROM
+                product p
+            LEFT JOIN
+                event_priority ep ON ep.product_idx = p.idx
+            LEFT JOIN
+                (SELECT product_idx FROM bookmark WHERE account_idx = $2) bm ON bm.product_idx = p.idx
+            WHERE
+                p.deleted_at IS NULL
+        )
+        SELECT
+            *
+        FROM
+            product_info
+        ORDER BY
+            p_score DESC, name
+        `;
+
+        const queryResult = await pgPool.query(sql, [companyIdx, accountIdx]);
+
+        result.data = queryResult.rows;
+
+        res.status(200).send(result);
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
 });
 
 //상품 검색하기
