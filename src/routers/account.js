@@ -70,7 +70,7 @@ router.post("/verify-email/check", async (req, res, next) => {
     const { email, verificationCode } = req.body;
     try {
         const storedVerificationCode = await redisClient.get(`emailVerification:${email}`);
-
+        console.log(storedVerificationCode)
         if (storedVerificationCode !== verificationCode) {
             const error = new Error("인증번호가 일치하지 않음");
             error.status = 401;
@@ -91,9 +91,18 @@ router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("
     const { email, pw, nickname } = req.body;
 
     try {
+        const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL"; // deleted 된 건지 확인해야 함
+        const emailQueryData = await pgPool.query(emailSql, [email]);
+
+        if (emailQueryData.rows.length > 0) {
+            const error = new Error("이메일이 중복됨");
+            error.status = 400;
+            throw error;
+        }
+
         const verified = await redisClient.get(`verifiedEmails:${email}`);
 
-        if (!verified) {
+        if (!verified) { // redis에 중복되는 이메일이 존재(비번변경시) -> 중복되는 이메일을 적어도 (그래서 위에 email 중복 체크 sql 추가)
             const error = new Error("인증되지 않은 이메일임");
             error.status = 403;
             throw error;
@@ -207,24 +216,40 @@ router.delete("/", loginAuth, async (req, res, next) => {
     }
 })
 
-//비밀번호 변경하기 -> 1. 로그인 전 비밀번호 찾기(이땐 email이 body로 필요하지 않나요??), 2. 내 정보 수정에서 비밀번호 변경 --> (토큰이 존재할 경우)가 없어야 하지 않나용? 아님 case를 나눠서...
-//-> 로그인 전 비밀번호 변경은 token에 정보가 없으니까 email이 꼭 필요하지 않을까용?
-// -> 인증되면 redis에 email 넣기 + 입력으로 email 받기
-// -> loginAuth 없이도 토큰 정보 얻을 수 있는 미들웨어 생각해보기
-
-
 /// 비로그인 상태에서 비밀번호 변경하기
 router.put("/pw", checkCondition("pw"), async (req, res, next) => {
     const { email, pw } = req.body;
+    try {
+        const verified = await redisClient.get(`verifiedEmails:${email}`);
 
+        if (!verified) {
+            const error = new Error("인증되지 않은 이메일임");
+            error.status = 403;
+            throw error;
+        }
+
+        const hashedPw = await bcrypt.hash(pw, 10);
+        const sql = "UPDATE account SET password=$1 WHERE idx=$2";
+        await pgPool.query(sql, [hashedPw, user.idx]);
+
+        res.status(201).send();
+    } catch (error) {
+        next(error);
+    }
 });
 
 // 로그인 상태에서 비밀번호 변경하기
 router.put("/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) => {
-    const { pw } = req.body;
+    const { email, pw } = req.body;
     try {
         const user = req.user;
-        const verified = await redisClient.get(`verifiedEmails:${user.email}`);
+        if (user.email !== email) {
+            const error = new Error("본인 이메일이 아님");
+            error.status = 401;
+            throw error;
+        }
+
+        const verified = await redisClient.get(`verifiedEmails:${email}`);
 
         if (!verified) {
             const error = new Error("인증되지 않은 이메일임");
