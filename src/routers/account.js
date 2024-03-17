@@ -1,7 +1,5 @@
 const router = require("express").Router();
-const jwt = require("jsonwebtoken");
 const redisClient = require("../modules/redisClient");
-const uuid = require("uuid");
 const bcrypt = require("bcrypt");
 
 const checkCondition = require("../middlewares/checkCondition");
@@ -11,17 +9,11 @@ const sendVerificationEmail = require("../modules/sendVerificationEmail");
 const generateVerificationCode = require("../modules/generateVerificationCode");
 const issueToken = require("../modules/issueToken");
 
-// 이메일 인증번호 발급
-// values 폴더 만들어서 patternConfig 안에 있는 거 옮기기 특정한 데이터들을... 아니면 벨리데이터에 전역변수로 넣기
-// db 라는 폴더에 연결하는 함수 넣기
-
-// 로그인, 비로그인 시 api 2개로 나누기!
-
 //이메일 인증번호 발급 (비로그인 상태시)
 router.post("/verify-email/send", checkCondition("email"), async (req, res, next) => {
     const { email } = req.body;
     try {
-        const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL"; // deleted 된 건지 확인해야 함
+        const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL";
         const emailQueryData = await pgPool.query(emailSql, [email]);
 
         if (emailQueryData.rows.length > 0) {
@@ -31,13 +23,11 @@ router.post("/verify-email/send", checkCondition("email"), async (req, res, next
         }
         const verificationCode = generateVerificationCode();
 
-        console.log(verificationCode);
         await sendVerificationEmail(email, verificationCode);
 
         await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
         res.status(201).send();
     } catch (error) {
-        console.log(error);
         next(error);
     }
 });
@@ -54,13 +44,11 @@ router.post("/verify-email/send/login", loginAuth, checkCondition("email"), asyn
 
         const verificationCode = generateVerificationCode();
 
-        console.log(verificationCode);
         await sendVerificationEmail(email, verificationCode);
 
         await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
         res.status(201).send();
     } catch (error) {
-        console.log(error);
         next(error);
     }
 });
@@ -70,7 +58,7 @@ router.post("/verify-email/check", async (req, res, next) => {
     const { email, verificationCode } = req.body;
     try {
         const storedVerificationCode = await redisClient.get(`emailVerification:${email}`);
-        console.log(storedVerificationCode)
+
         if (storedVerificationCode !== verificationCode) {
             const error = new Error("인증번호가 일치하지 않음");
             error.status = 401;
@@ -85,13 +73,11 @@ router.post("/verify-email/check", async (req, res, next) => {
 });
 
 //회원가입
-//인증된 이메일만
-//soft delete된 이메일, 닉네임 사용 가능하게 해야 함 ->
 router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("nickname"), async (req, res, next) => {
     const { email, pw, nickname } = req.body;
 
     try {
-        const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL"; // deleted 된 건지 확인해야 함
+        const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL";
         const emailQueryData = await pgPool.query(emailSql, [email]);
 
         if (emailQueryData.rows.length > 0) {
@@ -102,7 +88,7 @@ router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("
 
         const verified = await redisClient.get(`verifiedEmails:${email}`);
 
-        if (!verified) { // redis에 중복되는 이메일이 존재(비번변경시) -> 중복되는 이메일을 적어도 (그래서 위에 email 중복 체크 sql 추가)
+        if (!verified) {
             const error = new Error("인증되지 않은 이메일임");
             error.status = 403;
             throw error;
@@ -140,12 +126,6 @@ router.post("/login", checkCondition("email"), checkCondition("pw"), async (req,
         const sql = "SELECT * FROM account WHERE email =$1 AND deleted_at IS NULL";
         const queryData = await pgPool.query(sql, [trimEmail]);
         const user = queryData.rows[0];
-
-        if (queryData.rows.length == 0) {
-            const error = new Error("로그인 실패");
-            error.status = 401;
-            throw error;
-        }
 
         const passwordMatch = await bcrypt.compare(pw, user.password);
         if (!passwordMatch) {
