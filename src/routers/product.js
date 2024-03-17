@@ -1,18 +1,15 @@
 const router = require("express").Router();
 const pgPool = require("../modules/pgPool");
 const COMPANY_SIZE = 3;
-
-router.get("/test", async (req, res, next) => {
-    const { category, name, price, imageUrl, eventInfo } = req.body;
-    try {
-        const date = new Date();
-
-        res.status(200).send(date);
-    } catch (err) {
-        console.log(err);
-        next(err);
-    }
-});
+/////////////---------------product---------/////////////////////
+//  GET/all                       => 모든 상품 가져오기
+//  GET/company/:companyIdx       => 회사별로 행사 정렬해서 가져오기
+//  GET/search                    => 상품 검색
+//  GET//:productIdx              =>비밀번호 찾기
+//  POST/                          => 상품 추가하기
+//  PUT/                           => 상품 정보 수정
+//  DELETE/                        => 상품 삭제
+/////////////////////////////////////////
 
 //모든 상품 가져오기
 router.get("/all", async (req, res, next) => {
@@ -82,7 +79,7 @@ router.get("/company/:companyIdx", async (req, res, next) => {
                 event_history eh
             JOIN
                 company c ON eh.company_idx = c.idx
-            JOIN
+            JOINnn
                 event e ON eh.event_idx = e.idx
             WHERE
                 eh.start_date >= date_trunc('month', current_date)
