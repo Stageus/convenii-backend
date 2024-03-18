@@ -1,5 +1,9 @@
 const router = require("express").Router();
+
 const pgPool = require("../modules/pgPool");
+const checkCondition = require("../middlewares/checkCondition");
+const loginAuth = require("../middlewares/loginAuth");
+const checkAuthStatus = require("../middlewares/checkAuthStatus");
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
@@ -12,10 +16,11 @@ const COMPANY_SIZE = 3;
 /////////////////////////////////////////
 
 //모든 상품 가져오기
-router.get("/all", async (req, res, next) => {
-    const { accountIdx } = 3; //req.body.token;
+router.get("/all", checkAuthStatus, async (req, res, next) => {
+    const { accountIdx } = req.user;
     const result = {
         data: null,
+        authStatus: req.isLogin,
     };
     try {
         const sql = `
@@ -57,14 +62,26 @@ router.get("/all", async (req, res, next) => {
         next(err);
     }
 });
+
 //회사 행사페이지 상품 가져오기
-router.get("/company/:companyIdx", async (req, res, next) => {
+router.get("/company/:companyIdx", checkAuthStatus, async (req, res, next) => {
     const { companyIdx } = req.params;
-    const { accountIdx } = 3; //req.body.token;
+    const { accountIdx } = req.user;
+    const { page, option } = req.query;
     const result = {
         data: null,
+        authStatus: req.isLogin,
     };
+
+    let pageSizeOption = 10;
+    let offset = (parseInt(page) - 1) * pageSizeOption;
     try {
+        // main옵션을 건 경우 상위 3개만 출력
+        if (option === "main") {
+            pageSizeOption = 3;
+            offset = 0;
+        }
+
         const sql = `
         WITH event_priority AS (
             SELECT
@@ -113,9 +130,10 @@ router.get("/company/:companyIdx", async (req, res, next) => {
             product_info
         ORDER BY
             p_score DESC, name
+        LIMIT $3 OFFSET $4
         `;
 
-        const queryResult = await pgPool.query(sql, [companyIdx, accountIdx]);
+        const queryResult = await pgPool.query(sql, [companyIdx, accountIdx, pageSizeOption, offset]);
 
         result.data = queryResult.rows;
 

@@ -18,6 +18,7 @@ module.exports = async (req, res, next) => {
 
         next();
     } catch (error) {
+        req.user = 0;
         if (error.message === "jwt expired") {
             req.isLogin = "expired";
             next();
