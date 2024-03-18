@@ -1,11 +1,17 @@
 const router = require("express").Router();
+const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
+
+/////////////-------review---------////////////////////
+//  POST/product/:productIdx        => 리뷰 추가하기
+//  GET/product/:productIdx         =>  모든 리뷰 가져오기
+/////////////////////////////////////////////////////
+
 //productIdx의 리뷰 추가하기
-router.post("/product/:productIdx", async (req, res, next) => {
+router.post("/product/:productIdx", checkCondition(score), checkCondition(content), loginAuth, async (req, res, next) => {
     const { score, content } = req.body;
     const { productIdx } = req.params;
-    const token = req.headers.authorization;
-    const { accountIdx } = 3; //req.body.token;
+    const { accountIdx } = req.user;
 
     const client = await pgPool.connect();
     try {
@@ -27,9 +33,18 @@ router.post("/product/:productIdx", async (req, res, next) => {
             )
             WHERE idx = $1
         `;
-        await client.query(reviewSql, [productIdx, accountIdx, content, score]);
-        await client.query(scoreSql, [productIdx]);
-
+        const reviewQueryResult = await client.query(reviewSql, [productIdx, accountIdx, content, score]);
+        const scoreQueryResult = await client.query(scoreSql, [productIdx]);
+        if (reviewQueryResult.rowCount === 0) {
+            const error = new Error("insert review fail");
+            error.status = 400;
+            throw error;
+        }
+        if (scoreQueryResult.rowCount === 0) {
+            const error = new Error("update score fail");
+            error.status = 401;
+            throw error;
+        }
         await client.query("COMMIT");
         res.status(201).send();
     } catch (err) {
