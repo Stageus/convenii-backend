@@ -1,6 +1,12 @@
 const router = require("express").Router();
 const checkCondition = require("../middlewares/checkCondition");
 const pgPool = require("../modules/pgPool");
+
+/////////////-------review---------////////////////////
+//  POST/product/:productIdx        => 리뷰 추가하기
+//  GET/product/:productIdx         =>  모든 리뷰 가져오기
+/////////////////////////////////////////////////////
+
 //productIdx의 리뷰 추가하기
 router.post("/product/:productIdx", checkCondition(score), checkCondition(content), loginAuth, async (req, res, next) => {
     const { score, content } = req.body;
