@@ -4,6 +4,7 @@ const pgPool = require("../modules/pgPool");
 const checkCondition = require("../middlewares/checkCondition");
 const loginAuth = require("../middlewares/loginAuth");
 const checkAuthStatus = require("../middlewares/checkAuthStatus");
+const uploadImg = require("../middlewares/uploadImg");
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
@@ -348,9 +349,9 @@ router.get("/:productIdx", async (req, res, next) => {
 });
 
 //상품 추가하기
-router.post("/", async (req, res, next) => {
-    const { category, name, price, imageUrl, eventInfo } = req.body;
-
+router.post("/", uploadImg, async (req, res, next) => {
+    const { category, name, price, eventInfo } = req.body;
+    const imageUrl = req.file.location;
     const client = await pgPool.connect();
 
     try {
@@ -384,6 +385,8 @@ router.post("/", async (req, res, next) => {
         });
 
         await client.query("COMMIT");
+        console.log(imageUrl);
+        console.log(eventInfo);
         res.status(201).send();
     } catch (err) {
         await client.query("ROLLBACK");
