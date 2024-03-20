@@ -17,11 +17,15 @@ const COMPANY_SIZE = 3;
 
 //모든 상품 가져오기
 router.get("/all", checkAuthStatus, async (req, res, next) => {
-    const { accountIdx } = req.user;
+    const { accountIdx } = req.user.idx;
+    const { page } = req.query;
+    const pageSizeOption = 10;
+
     const result = {
         data: null,
         authStatus: req.isLogin,
     };
+
     try {
         const sql = `
             SELECT
@@ -51,9 +55,10 @@ router.get("/all", checkAuthStatus, async (req, res, next) => {
             GROUP BY
                 p.idx, bm.bookmarked
             ORDER BY
-                p.name;
+                p.name
+            LIMIT $2 OFFSET $3
         `;
-        const queryResult = await pgPool.query(sql, [accountIdx]);
+        const queryResult = await pgPool.query(sql, [accountIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]);
         result.data = queryResult.rows;
 
         res.status(200).send(result);
@@ -68,13 +73,14 @@ router.get("/company/:companyIdx", checkAuthStatus, async (req, res, next) => {
     const { companyIdx } = req.params;
     const { accountIdx } = req.user;
     const { page, option } = req.query;
+    let pageSizeOption = 10;
+    let offset = (parseInt(page) - 1) * pageSizeOption;
+
     const result = {
         data: null,
         authStatus: req.isLogin,
     };
 
-    let pageSizeOption = 10;
-    let offset = (parseInt(page) - 1) * pageSizeOption;
     try {
         // main옵션을 건 경우 상위 3개만 출력
         if (option === "main") {
@@ -147,7 +153,7 @@ router.get("/company/:companyIdx", checkAuthStatus, async (req, res, next) => {
 //상품 검색하기
 router.get("/search", async (req, res, next) => {
     const { keyword, eventFilter, categoryFilter } = req.query;
-    const { accountIdx } = 3; //req.body.token;
+    const { accountIdx } = 3; //req.user.idx;
     const result = {
         data: null,
     };
@@ -245,7 +251,7 @@ router.get("/search", async (req, res, next) => {
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
     const { productIdx } = req.params;
-    const { accountIdx } = 3; //req.body.token;
+    const { accountIdx } = req.user.idx;
     const result = {
         data: null,
     };
