@@ -247,4 +247,4 @@ router.put("/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) 
     }
 });
 
-module.exports = router
+module.exports = router;
