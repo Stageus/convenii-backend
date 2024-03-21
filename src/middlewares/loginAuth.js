@@ -25,7 +25,7 @@ const isLogin = async (req, res, next) => {
                 return "오류 발생";
             }
         })();
-        res.status(401).send({ message });
+        res.status(403).send({ message });
     }
 };
 
