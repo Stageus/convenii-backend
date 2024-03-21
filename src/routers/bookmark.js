@@ -1,7 +1,9 @@
 const router = require("express").Router();
+const loginAuth = require("../middlewares/loginAuth");
 
 // 북마크 등록하기
-router.post("/", async (req, res, next) => {
+router.post("/product/:productIdx", loginAuth, async (req, res, next) => {
+    const { productIdx } = req.params;
     try {
 
     } catch (error) {
