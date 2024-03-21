@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const checkCondition = require("../middlewares/checkCondition");
+const loginAuth = require("../middlewares/loginAuth");
 const pgPool = require("../modules/pgPool");
 
 /////////////-------review---------////////////////////
@@ -8,7 +9,7 @@ const pgPool = require("../modules/pgPool");
 /////////////////////////////////////////////////////
 
 //productIdx의 리뷰 추가하기
-router.post("/product/:productIdx", checkCondition(score), checkCondition(content), loginAuth, async (req, res, next) => {
+router.post("/product/:productIdx", checkCondition("score"), checkCondition("content"), loginAuth, async (req, res, next) => {
     const { score, content } = req.body;
     const { productIdx } = req.params;
     const { accountIdx } = req.user.idx;
@@ -29,7 +30,7 @@ router.post("/product/:productIdx", checkCondition(score), checkCondition(conten
                 FROM
                     review
                 WHERE
-                    product_idx = $1 
+                    product_idx = $1
             )
             WHERE idx = $1
         `;
