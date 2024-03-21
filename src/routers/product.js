@@ -1,5 +1,10 @@
 const router = require("express").Router();
+
 const pgPool = require("../modules/pgPool");
+const checkCondition = require("../middlewares/checkCondition");
+const loginAuth = require("../middlewares/loginAuth");
+const checkAuthStatus = require("../middlewares/checkAuthStatus");
+const uploadImg = require("../middlewares/uploadImg");
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
@@ -12,11 +17,16 @@ const COMPANY_SIZE = 3;
 /////////////////////////////////////////
 
 //모든 상품 가져오기
-router.get("/all", async (req, res, next) => {
-    const { accountIdx } = 3; //req.body.token;
+router.get("/all", checkAuthStatus, async (req, res, next) => {
+    const { accountIdx } = req.user.idx;
+    const { page } = req.query;
+    const pageSizeOption = 10;
+
     const result = {
         data: null,
+        authStatus: req.isLogin,
     };
+
     try {
         const sql = `
             SELECT
@@ -46,9 +56,10 @@ router.get("/all", async (req, res, next) => {
             GROUP BY
                 p.idx, bm.bookmarked
             ORDER BY
-                p.name;
+                p.name
+            LIMIT $2 OFFSET $3
         `;
-        const queryResult = await pgPool.query(sql, [accountIdx]);
+        const queryResult = await pgPool.query(sql, [accountIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]);
         result.data = queryResult.rows;
 
         res.status(200).send(result);
@@ -57,14 +68,27 @@ router.get("/all", async (req, res, next) => {
         next(err);
     }
 });
+
 //회사 행사페이지 상품 가져오기
-router.get("/company/:companyIdx", async (req, res, next) => {
+router.get("/company/:companyIdx", checkAuthStatus, async (req, res, next) => {
     const { companyIdx } = req.params;
-    const { accountIdx } = 3; //req.body.token;
+    const { accountIdx } = req.user;
+    const { page, option } = req.query;
+    let pageSizeOption = 10;
+    let offset = (parseInt(page) - 1) * pageSizeOption;
+
     const result = {
         data: null,
+        authStatus: req.isLogin,
     };
+
     try {
+        // main옵션을 건 경우 상위 3개만 출력
+        if (option === "main") {
+            pageSizeOption = 3;
+            offset = 0;
+        }
+
         const sql = `
         WITH event_priority AS (
             SELECT
@@ -113,9 +137,10 @@ router.get("/company/:companyIdx", async (req, res, next) => {
             product_info
         ORDER BY
             p_score DESC, name
+        LIMIT $3 OFFSET $4
         `;
 
-        const queryResult = await pgPool.query(sql, [companyIdx, accountIdx]);
+        const queryResult = await pgPool.query(sql, [companyIdx, accountIdx, pageSizeOption, offset]);
 
         result.data = queryResult.rows;
 
@@ -129,7 +154,7 @@ router.get("/company/:companyIdx", async (req, res, next) => {
 //상품 검색하기
 router.get("/search", async (req, res, next) => {
     const { keyword, eventFilter, categoryFilter } = req.query;
-    const { accountIdx } = 3; //req.body.token;
+    const { accountIdx } = 3; //req.user.idx;
     const result = {
         data: null,
     };
@@ -227,7 +252,7 @@ router.get("/search", async (req, res, next) => {
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
     const { productIdx } = req.params;
-    const { accountIdx } = 3; //req.body.token;
+    const { accountIdx } = req.user.idx;
     const result = {
         data: null,
     };
@@ -324,9 +349,9 @@ router.get("/:productIdx", async (req, res, next) => {
 });
 
 //상품 추가하기
-router.post("/", async (req, res, next) => {
-    const { category, name, price, imageUrl, eventInfo } = req.body;
-
+router.post("/", uploadImg, async (req, res, next) => {
+    const { category, name, price, eventInfo } = req.body;
+    const imageUrl = req.file.location;
     const client = await pgPool.connect();
 
     try {
@@ -360,6 +385,8 @@ router.post("/", async (req, res, next) => {
         });
 
         await client.query("COMMIT");
+        console.log(imageUrl);
+        console.log(eventInfo);
         res.status(201).send();
     } catch (err) {
         await client.query("ROLLBACK");
