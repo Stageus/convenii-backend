@@ -28,6 +28,11 @@ router.get("/all", checkAuthStatus, async (req, res, next) => {
     };
 
     try {
+        if (page <= 0 || !page) {
+            const err = new Error("page 입력 오류");
+            err.status = 400;
+            throw err;
+        }
         const sql = `
             SELECT
                 p.idx,
