@@ -385,10 +385,11 @@ router.post("/", uploadImg, adminAuth, async (req, res, next) => {
                           )
         `;
         const today = new Date();
-        eventInfo.forEach(async (eventRow) => {
+
+        for (let idx = 0; idx < eventInfo.length; idx++) {
             const { companyName, eventType, price } = eventRow;
             await client.query(eventSql, [companyName, productIdx, eventType, today, price]);
-        });
+        }
 
         await client.query("COMMIT");
         console.log(imageUrl);
