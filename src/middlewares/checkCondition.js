@@ -4,6 +4,7 @@ const patterns = {
     nickname: /^[a-zA-Z0-9가-힣]{3,10}$/,
     score: /^[0-5]$/,
     content: /^$|.{5,100}$/,
+    page: /^[1-9]\d*$/,
 };
 
 const checkCondition =
