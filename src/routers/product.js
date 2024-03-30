@@ -3,6 +3,7 @@ const router = require("express").Router();
 const pgPool = require("../modules/pgPool");
 const checkCondition = require("../middlewares/checkCondition");
 const loginAuth = require("../middlewares/loginAuth");
+const adminAuth = require("../middlewares/adminAuth");
 const checkAuthStatus = require("../middlewares/checkAuthStatus");
 const uploadImg = require("../middlewares/uploadImg");
 const COMPANY_SIZE = 3;
@@ -18,7 +19,7 @@ const COMPANY_SIZE = 3;
 
 //모든 상품 가져오기
 router.get("/all", checkAuthStatus, async (req, res, next) => {
-    const { accountIdx } = req.user.idx;
+    const accountIdx = req.user.idx;
     const { page } = req.query;
     const pageSizeOption = 10;
 
@@ -77,7 +78,7 @@ router.get("/all", checkAuthStatus, async (req, res, next) => {
 //회사 행사페이지 상품 가져오기
 router.get("/company/:companyIdx", checkAuthStatus, async (req, res, next) => {
     const { companyIdx } = req.params;
-    const { accountIdx } = req.user;
+    const accountIdx = req.user.idx;
     const { page, option } = req.query;
     let pageSizeOption = 10;
     let offset = (parseInt(page) - 1) * pageSizeOption;
@@ -157,9 +158,9 @@ router.get("/company/:companyIdx", checkAuthStatus, async (req, res, next) => {
 });
 
 //상품 검색하기
-router.get("/search", async (req, res, next) => {
+router.get("/search", checkAuthStatus, async (req, res, next) => {
     const { keyword, eventFilter, categoryFilter } = req.query;
-    const { accountIdx } = 3; //req.user.idx;
+    const accountIdx = req.user.idx;
     const result = {
         data: null,
     };
@@ -257,7 +258,7 @@ router.get("/search", async (req, res, next) => {
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
     const { productIdx } = req.params;
-    const { accountIdx } = req.user.idx;
+    const accountIdx = req.user.idx;
     const result = {
         data: null,
     };
@@ -354,7 +355,7 @@ router.get("/:productIdx", async (req, res, next) => {
 });
 
 //상품 추가하기
-router.post("/", uploadImg, async (req, res, next) => {
+router.post("/", uploadImg, adminAuth, async (req, res, next) => {
     const { category, name, price, eventInfo } = req.body;
     const imageUrl = req.file.location;
     const client = await pgPool.connect();
@@ -400,7 +401,7 @@ router.post("/", uploadImg, async (req, res, next) => {
 });
 
 // productIdx 수정하기
-router.put("/:productIdx", async (req, res, next) => {
+router.put("/:productIdx", adminAuth, async (req, res, next) => {
     const { category, name, price, imageUrl, eventInfo } = req.body;
     const { productIdx } = req.params;
 
@@ -455,7 +456,7 @@ router.put("/:productIdx", async (req, res, next) => {
 });
 
 //productIdx 삭제하기
-router.delete("/:productIdx", async (req, res, next) => {
+router.delete("/:productIdx", adminAuth, async (req, res, next) => {
     const { productIdx } = req.params;
     try {
         const today = new Date();
