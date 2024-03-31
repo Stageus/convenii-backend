@@ -14,7 +14,7 @@ router.post("/product/:productIdx", loginAuth, async (req, res, next) => {
             error.status = 400;
             throw error;
         }
-
+      
         const bookmarkExistingSql = "SELECT * FROM bookmark WHERE account_idx=$1 AND product_idx=$2";
         const bookmarkQueryData = await pgPool.query(bookmarkExistingSql, [accountIdx, productIdx]);
         if (bookmarkQueryData.rows.length > 0) {
@@ -22,10 +22,10 @@ router.post("/product/:productIdx", loginAuth, async (req, res, next) => {
             error.status = 401;
             throw error;
         }
-
+      
         const insertSql = "INSERT INTO bookmark (account_idx, product_idx) VALUES ($1,$2)";
         await pgPool.query(insertSql, [accountIdx, productIdx]);
-
+      
         res.status(201).send();
     } catch (error) {
         next(error);
