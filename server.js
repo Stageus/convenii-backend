@@ -8,6 +8,7 @@ const accountApi = require("./src/routers/account");
 const bookmarkApi = require("./src/routers/bookmark");
 const productApi = require("./src/routers/product");
 const reviewApi = require("./src/routers/review");
+const morganLogger = require("./src/middlewares/morganLogger");
 //config-------------------------------------------------//
 
 const { HTTP_PORT, HTTPS_PORT } = require("./src/config/portConfig");
@@ -15,7 +16,7 @@ const httpConfig = require("./src/config/httpsConfig");
 
 //middleWare--------------------------------------------//
 app.use(express.json());
-
+app.use(morganLogger);
 //Api---------------------------------------------------//
 
 app.use("/account", accountApi);

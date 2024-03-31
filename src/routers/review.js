@@ -12,7 +12,7 @@ const pgPool = require("../modules/pgPool");
 router.post("/product/:productIdx", checkCondition("score"), checkCondition("content"), loginAuth, async (req, res, next) => {
     const { score, content } = req.body;
     const { productIdx } = req.params;
-    const { accountIdx } = req.user.idx;
+    const accountIdx = req.user.idx;
 
     const client = await pgPool.connect();
     try {
