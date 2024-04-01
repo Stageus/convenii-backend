@@ -25,3 +25,10 @@ class ForbiddenException extends Exception {
         super(403, message);
     }
 }
+
+module.exports = {
+    Exception,
+    NotFoundException,
+    BadRequestException,
+    ForbiddenException,
+};
