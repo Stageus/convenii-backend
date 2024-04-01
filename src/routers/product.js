@@ -6,6 +6,8 @@ const loginAuth = require("../middlewares/loginAuth");
 const adminAuth = require("../middlewares/adminAuth");
 const checkAuthStatus = require("../middlewares/checkAuthStatus");
 const uploadImg = require("../middlewares/uploadImg");
+const wrapper = require("../modules/wrapper");
+const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
@@ -18,62 +20,64 @@ const COMPANY_SIZE = 3;
 /////////////////////////////////////////
 
 //모든 상품 가져오기
-router.get("/all", checkAuthStatus, async (req, res, next) => {
-    const accountIdx = req.user.idx;
-    const { page } = req.query;
-    const pageSizeOption = 10;
+router.get(
+    "/all",
+    checkAuthStatus,
+    wrapper((req, res, next) => {
+        const accountIdx = req.user.idx;
+        const { page } = req.query;
+        const pageSizeOption = 10;
 
-    const result = {
-        data: null,
-        authStatus: req.isLogin,
-    };
+        const result = {
+            data: null,
+            authStatus: req.isLogin,
+        };
 
-    try {
-        if (page <= 0 || !page) {
-            const err = new Error("page 입력 오류");
-            err.status = 400;
-            throw err;
+        try {
+            if (!page || page <= 0) {
+                throw BadRequestException("page 입력 오류");
+            }
+            const sql = `
+                SELECT
+                    p.idx,
+                    p.category_idx,
+                    p.name,
+                    p.price,
+                    p.image_url,
+                    p.score,
+                    p.created_at,
+                    COALESCE(bm.bookmarked, 0) AS bookmarked,
+                    json_object_agg(c.name, COALESCE(CASE WHEN e.type = '할인' THEN event_history.price::text ELSE e.type END, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
+                FROM
+                    product p
+                CROSS JOIN
+                    company c
+                LEFT JOIN
+                    event_history ON event_history.product_idx = p.idx AND event_history.company_idx = c.idx
+                LEFT JOIN
+                    event e ON e.idx = event_history.event_idx
+                    AND event_history.start_date >= date_trunc('month', current_date)
+                    AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                LEFT JOIN
+                    (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
+                WHERE
+                    p.deleted_at IS NULL
+                GROUP BY
+                    p.idx, bm.bookmarked
+                ORDER BY
+                    p.name
+                LIMIT $2 OFFSET $3
+            `;
+            const queryResult = pgPool.query(sql, [accountIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]);
+            result.data = queryResult.rows;
+
+            res.status(200).send(result);
+        } catch (err) {
+            console.log(err);
+            next(err);
         }
-        const sql = `
-            SELECT
-                p.idx,
-                p.category_idx,
-                p.name,
-                p.price,
-                p.image_url,
-                p.score,
-                p.created_at,
-                COALESCE(bm.bookmarked, 0) AS bookmarked,
-                json_object_agg(c.name, COALESCE(CASE WHEN e.type = '할인' THEN event_history.price::text ELSE e.type END, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
-            FROM
-                product p
-            CROSS JOIN
-                company c
-            LEFT JOIN
-                event_history ON event_history.product_idx = p.idx AND event_history.company_idx = c.idx
-            LEFT JOIN
-                event e ON e.idx = event_history.event_idx
-                AND event_history.start_date >= date_trunc('month', current_date)
-                AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-            LEFT JOIN
-                (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
-            WHERE
-                p.deleted_at IS NULL
-            GROUP BY
-                p.idx, bm.bookmarked
-            ORDER BY
-                p.name
-            LIMIT $2 OFFSET $3
-        `;
-        const queryResult = await pgPool.query(sql, [accountIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]);
-        result.data = queryResult.rows;
-
-        res.status(200).send(result);
-    } catch (err) {
-        console.log(err);
-        next(err);
-    }
-});
+    })
+);
 
 //회사 행사페이지 상품 가져오기
 router.get("/company/:companyIdx", checkAuthStatus, async (req, res, next) => {
