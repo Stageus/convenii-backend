@@ -7,6 +7,7 @@ const adminAuth = require("../middlewares/adminAuth");
 const checkAuthStatus = require("../middlewares/checkAuthStatus");
 const uploadImg = require("../middlewares/uploadImg");
 const wrapper = require("../modules/wrapper");
+const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -23,59 +24,66 @@ const COMPANY_SIZE = 3;
 router.get(
     "/all",
     checkAuthStatus,
-    wrapper((req, res, next) => {
-        const accountIdx = req.user.idx;
+    wrapper(async (req, res, next) => {
+        const user = req.user;
         const { page } = req.query;
         const pageSizeOption = 10;
 
-        const result = {
-            data: null,
-            authStatus: req.isLogin,
-        };
-
-        try {
-            if (!page || page <= 0) {
-                throw BadRequestException("page 입력 오류");
-            }
-            const sql = `
-                SELECT
-                    p.idx,
-                    p.category_idx,
-                    p.name,
-                    p.price,
-                    p.image_url,
-                    p.score,
-                    p.created_at,
-                    COALESCE(bm.bookmarked, 0) AS bookmarked,
-                    json_object_agg(c.name, COALESCE(CASE WHEN e.type = '할인' THEN event_history.price::text ELSE e.type END, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
-                FROM
-                    product p
-                CROSS JOIN
-                    company c
-                LEFT JOIN
-                    event_history ON event_history.product_idx = p.idx AND event_history.company_idx = c.idx
-                LEFT JOIN
-                    event e ON e.idx = event_history.event_idx
-                    AND event_history.start_date >= date_trunc('month', current_date)
-                    AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-                LEFT JOIN
-                    (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
-                WHERE
-                    p.deleted_at IS NULL
-                GROUP BY
-                    p.idx, bm.bookmarked
-                ORDER BY
-                    p.name
-                LIMIT $2 OFFSET $3
-            `;
-            const queryResult = pgPool.query(sql, [accountIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]);
-            result.data = queryResult.rows;
-
-            res.status(200).send(result);
-        } catch (err) {
-            console.log(err);
-            next(err);
+        if (!page || page <= 0) {
+            throw BadRequestException("page 입력 오류");
         }
+
+        const products = await query(
+            `
+            SELECT
+                product.idx,
+                product.category_idx,
+                product.name,
+                product.price,
+                product.image_url,
+                product.score,
+                product.created_at,
+                (
+                    SELECT
+                        bookmark.idx
+                    FROM
+                        bookmark
+                    WHERE
+                        account_idx = $1
+                    AND
+                        product_idx = product.idx
+                ) IS NOT NULL AS "bookmarked",
+                ARRAY (
+                    SELECT
+                        json_build_object(
+                            'companyIdx', event_history.company_idx,
+                            'eventType', event_history.event_idx,
+                            'price', price
+                        )
+                    FROM
+                        event_history
+                    WHERE
+                        event_history.product_idx = product.idx
+                    AND
+                        event_history.start_date >= date_trunc('month', current_date)
+                    AND
+                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                    ORDER BY
+                        event_history.company_idx
+                )
+            FROM    
+                product
+            ORDER BY
+                product.name
+            LIMIT $2 OFFSET $3
+            `,
+            [user.idx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]
+        );
+
+        res.status(200).send({
+            data: products.rows,
+            authStatus: req.isLogin,
+        });
     })
 );
 
