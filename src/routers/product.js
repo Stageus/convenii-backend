@@ -29,10 +29,9 @@ router.get(
         const { page } = req.query;
         const pageSizeOption = 10;
 
-        if (!page || page <= 0) {
-            throw BadRequestException("page 입력 오류");
+        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
+            throw new BadRequestException("page 입력 오류");
         }
-
         const products = await query(
             `
             SELECT
@@ -70,9 +69,11 @@ router.get(
                         event_history.start_date < date_trunc('month', current_date) + interval '1 month'
                     ORDER BY
                         event_history.company_idx
-                )
+                ) AS eventInfo
             FROM    
                 product
+            WHERE
+                product.deleted_at IS NULL
             ORDER BY
                 product.name
             LIMIT $2 OFFSET $3
@@ -88,86 +89,107 @@ router.get(
 );
 
 //회사 행사페이지 상품 가져오기
-router.get("/company/:companyIdx", checkAuthStatus, async (req, res, next) => {
-    const { companyIdx } = req.params;
-    const accountIdx = req.user.idx;
-    const { page, option } = req.query;
-    let pageSizeOption = 10;
-    let offset = (parseInt(page) - 1) * pageSizeOption;
-
-    const result = {
-        data: null,
-        authStatus: req.isLogin,
-    };
-
-    try {
-        // main옵션을 건 경우 상위 3개만 출력
+router.get(
+    "/company/:companyIdx",
+    checkAuthStatus,
+    wrapper(async (req, res, next) => {
+        const { companyIdx } = req.params;
+        const { page, option } = req.query;
+        const user = req.user;
+        let pageSizeOption = 10;
+        let offset = (parseInt(page) - 1) * pageSizeOption;
+        if (!companyIdx || isNaN(parseInt(companyIdx, 10)) || companyIdx <= 0 || companyIdx > COMPANY_SIZE) {
+            throw new BadRequestException("companyIㄴdx 입력 오류");
+        }
+        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
+            throw new BadRequestException("page 입력 오류");
+        }
+        if (option !== "main" && option !== "all") {
+            throw new BadRequestException("option 입력 오류");
+        }
         if (option === "main") {
             pageSizeOption = 3;
             offset = 0;
         }
 
-        const sql = `
-        WITH event_priority AS (
-            SELECT
-                eh.product_idx,
-                SUM(
-                    CASE
-                        WHEN c.idx = $1 THEN e.priority * ${COMPANY_SIZE - 1}
-                        ELSE -e.priority
-                    END
-                ) AS p_score
-            FROM
-                event_history eh
-            JOIN
-                company c ON eh.company_idx = c.idx
-            JOINnn
-                event e ON eh.event_idx = e.idx
-            WHERE
-                eh.start_date >= date_trunc('month', current_date)
-                AND eh.start_date < date_trunc('month', current_date) + interval '1 month'
-            GROUP BY
-                eh.product_idx
-        ),
-        product_info AS (
-            SELECT
-                p.idx,
-                p.category_idx,
-                p.name,
-                p.price,
-                p.image_url,
-                p.score,
-                p.created_at,
-                COALESCE(ep.p_score, 0) AS p_score,
-                CASE WHEN bm.product_idx IS NOT NULL THEN true ELSE false END AS is_bookmarked
-            FROM
-                product p
-            LEFT JOIN
-                event_priority ep ON ep.product_idx = p.idx
-            LEFT JOIN
-                (SELECT product_idx FROM bookmark WHERE account_idx = $2) bm ON bm.product_idx = p.idx
-            WHERE
-                p.deleted_at IS NULL
-        )
-        SELECT
-            *
-        FROM
-            product_info
-        ORDER BY
-            p_score DESC, name
-        LIMIT $3 OFFSET $4
-        `;
-
-        const queryResult = await pgPool.query(sql, [companyIdx, accountIdx, pageSizeOption, offset]);
-
-        result.data = queryResult.rows;
-
-        res.status(200).send(result);
-    } catch (err) {
-        console.log(err);
-        next(err);
-    }
-});
+        const products = await query(
+            `
+            WITH productInfo AS (
+                SELECT
+                    product.idx,
+                    product.category_idx,
+                    product.name,
+                    product.price,
+                    product.image_url,
+                    product.score,
+                    product.created_at,
+                    (
+                        SELECT
+                            bookmark.idx
+                        FROM
+                            bookmark
+                        WHERE
+                            account_idx = $1
+                        AND
+                            product_idx = product.idx
+                    ) IS NOT NULL AS "bookmarked",
+                    ARRAY (
+                        SELECT
+                            json_build_object(
+                                'companyIdx', event_history.company_idx,
+                                'eventType', event_history.event_idx,
+                                'price', price
+                            )
+                        FROM
+                            event_history
+                        WHERE
+                            event_history.product_idx = product.idx
+                        AND
+                            event_history.start_date >= date_trunc('month', current_date)
+                        AND
+                            event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                        ORDER BY
+                            event_history.company_idx
+                    ) AS eventInfo,
+                    (
+                        SELECT
+                            SUM(
+                            CASE
+                                    WHEN event_history.company_idx = $2 THEN event.priority * ${COMPANY_SIZE - 1}
+                                    ELSE -event.priority
+                                END
+                            )   
+                        FROM
+                            event_history
+                        JOIN 
+                            event ON event_history.event_idx = event.idx
+                        WHERE          
+                            event_history.product_idx = product.idx 
+                        AND
+                            event_history.start_date >= date_trunc('month', current_date)
+                        AND
+                            event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                        GROUP BY
+                            event_history.product_idx
+                    ) AS priorityScore
+                FROM    
+                    product
+                WHERE
+                    product.deleted_at IS NULL
+            )
+            SELECT * FROM productInfo
+            WHERE priorityScore >= 0
+            ORDER BY priorityScore DESC, name
+            LIMIT $3 OFFSET $4;
+            `,
+            [user.idx, companyIdx, pageSizeOption, offset]
+        );
+        res.status(200).send({
+            data: products.rows,
+            authStatus: req.isLogin,
+        });
+    })
+);
 
 //상품 검색하기
 router.get("/search", checkAuthStatus, async (req, res, next) => {
