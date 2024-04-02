@@ -10,6 +10,7 @@ const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 const COMPANY_SIZE = 3;
+const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
 //  GET/company/:companyIdx       => 회사별로 행사 정렬해서 가져오기
@@ -192,102 +193,106 @@ router.get(
 );
 
 //상품 검색하기
-router.get("/search", checkAuthStatus, async (req, res, next) => {
-    const { keyword, eventFilter, categoryFilter } = req.query;
-    const accountIdx = req.user.idx;
-    const result = {
-        data: null,
-    };
-    try {
+router.get(
+    "/search",
+    checkAuthStatus,
+    wrapper(async (req, res, next) => {
+        let { keyword, eventFilter, categoryFilter, page } = req.query;
+        const user = req.user;
+        const pageSizeOption = 10;
+        if (!keywordPattern.test(keyword)) {
+            throw new BadRequestException("keyword 입력 오류");
+        }
+        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
+            throw new BadRequestException("page 입력 오류");
+        }
+        if (!eventFilter) {
+            eventFilter = [1, 2, 3, 4, 5, 6];
+        }
+        if (!categoryFilter) {
+            categoryFilter = [1, 2, 3, 4, 5, 6];
+        }
         //검색어 필터링 sql
         const sql = `
+
+            --해당 이벤트가 존재하는 product_idx 가져오기
+            WITH possilbe_product AS (
+                SELECT
+                    DISTINCT event_history.product_idx AS idx
+                FROM
+                    event_history
+                WHERE
+                    event_history.event_idx = ANY($4)
+                    AND
+                        event_history.start_date >= date_trunc('month', current_date)
+                    AND
+                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+            )
             SELECT
-                p.idx,
-                p.category_idx,
-                p.name,
-                p.price,
-                p.image_url,
-                p.score,
-                p.created_at,
-                COALESCE(bm.bookmarked, 0) AS bookmarked,
-                json_object_agg(c.name, COALESCE(CASE WHEN e.type = '할인' THEN event_history.price::text ELSE e.type END, 'null')) FILTER (WHERE c.name IS NOT NULL) AS events
-            FROM
-                product p
-            CROSS JOIN
-                company c
+                product.idx,
+                product.category_idx,
+                product.name,
+                product.price,
+                product.image_url,
+                product.score,
+                product.created_at,
+                --북마크 여부
+                (
+                    SELECT
+                        bookmark.idx
+                    FROM
+                        bookmark
+                    WHERE
+                        account_idx = $1
+                    AND
+                        product_idx = product.idx
+                ) IS NOT NULL AS "bookmarked",
+                -- 이벤트 정보
+                ARRAY (
+                    SELECT
+                        json_build_object(
+                            'companyIdx', event_history.company_idx,
+                            'eventType', event_history.event_idx,
+                            'price', price
+                        )
+                    FROM
+                        event_history
+                    WHERE
+                        event_history.product_idx = product.idx
+                    AND
+                        event_history.start_date >= date_trunc('month', current_date)
+                    AND
+                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                    ORDER BY
+                        event_history.company_idx
+                ) AS eventInfo
+            FROM    
+                product
             LEFT JOIN
-                event_history ON event_history.product_idx = p.idx AND event_history.company_idx = c.idx
-            LEFT JOIN
-                event e ON e.idx = event_history.event_idx
-                AND event_history.start_date >= date_trunc('month', current_date)
-                AND event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-            LEFT JOIN
-                (SELECT product_idx, 1 AS bookmarked FROM bookmark WHERE account_idx = $1) bm ON bm.product_idx = p.idx
+                possilbe_product
+            ON
+                product.idx = possilbe_product.idx
             WHERE
-                p.deleted_at IS NULL
-                AND p.name LIKE $2
-            GROUP BY
-                p.idx, bm.bookmarked
+                product.deleted_at IS NULL
+            AND
+                product.name LIKE $2
+            AND
+                product.category_idx = ANY($3)
+            AND
+                possilbe_product.idx IS NOT NULL
             ORDER BY
-                p.name;
-        `;
-        const catgegorySql = `SELECT idx FROM category WHERE name = ANY($1)`;
-        const queryResult = await pgPool.query(sql, [accountIdx, "%" + keyword + "%"]);
-        const categoryResult = await pgPool.query(catgegorySql, [categoryFilter]);
+                product.name
+            LIMIT $5 OFFSET $6
+            `;
 
-        result.data = [];
+        const products = await query(sql, [user.idx, "%" + keyword + "%", categoryFilter, eventFilter, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]);
 
-        //필터링 후처리
-
-        for (let row = 0; row < queryResult.rows.length; row++) {
-            const productRow = queryResult.rows[row];
-            let canPush = 0;
-
-            //카테고리 필터
-            if (categoryResult.rows.length) {
-                for (let i = 0; i < categoryResult.rows.length; i++) {
-                    if (categoryResult.rows[i].idx === productRow.category_idx) {
-                        canPush = 1;
-                        break;
-                    }
-                }
-            } else {
-                canPush = 1;
-            }
-
-            if (canPush === 0) {
-                continue;
-            }
-            canPush = 1;
-            //이벤트 필터
-            if (eventFilter.length) {
-                for (let i = 0; i < eventFilter; i++) {
-                    if (canPush === 1) {
-                        break;
-                    }
-
-                    for (let companyIdx = 0; companyIdx < productRow.event.length; companyIdx++) {
-                        if (eventFilter[i] === productRow.event[companyIdx]) {
-                            canPush = 1;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                canPush = 1;
-            }
-            if (canPush === 0) {
-                continue;
-            }
-
-            result.data.push(productRow);
-        }
-        res.status(200).send(result);
-    } catch (err) {
-        console.log(err);
-        next(err);
-    }
-});
+        res.status(200).send({
+            data: products.rows,
+            authStatus: req.isLogin,
+        });
+    })
+);
 
 //productIdx 가져오기
 router.get("/:productIdx", async (req, res, next) => {
