@@ -551,22 +551,25 @@ router.put(
 );
 
 //productIdx 삭제하기
-router.delete("/:productIdx", adminAuth, async (req, res, next) => {
-    const { productIdx } = req.params;
-    try {
-        const today = new Date();
-        const sql = `
-                UPDATE
-                    product
-                SET
-                    deleted_at = $1
-                WHERE
-                    idx = $2`;
-        await pgPool.query(sql, [today, productIdx]);
+router.delete(
+    "/:productIdx",
+    adminAuth,
+    wrapper(async (req, res, next) => {
+        const { productIdx } = req.params;
+
+        await query(
+            `
+            UPDATE
+                product
+            SET
+                deleted_at = current_date
+            WHERE
+                idx = $1
+            `,
+            [productIdx]
+        );
         res.status(201).send();
-    } catch (err) {
-        await client.query("ROLLBACK");
-        next(err);
-    }
-});
+    })
+);
+
 module.exports = router;
