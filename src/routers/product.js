@@ -100,7 +100,7 @@ router.get(
         let pageSizeOption = 10;
         let offset = (parseInt(page) - 1) * pageSizeOption;
         if (!companyIdx || isNaN(parseInt(companyIdx, 10)) || companyIdx <= 0 || companyIdx > COMPANY_SIZE) {
-            throw new BadRequestException("companyIㄴdx 입력 오류");
+            throw new BadRequestException("companyIdx 입력 오류");
         }
         if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
             throw new BadRequestException("page 입력 오류");
@@ -214,7 +214,6 @@ router.get(
         }
         //검색어 필터링 sql
         const sql = `
-
             --해당 이벤트가 존재하는 product_idx 가져오기
             WITH possilbe_product AS (
                 SELECT
@@ -295,104 +294,101 @@ router.get(
 );
 
 //productIdx 가져오기
-router.get("/:productIdx", async (req, res, next) => {
-    const { productIdx } = req.params;
-    const accountIdx = req.user.idx;
-    const result = {
-        data: null,
-    };
+router.get(
+    "/:productIdx",
+    checkAuthStatus,
+    wrapper(async (req, res, next) => {
+        const { productIdx } = req.params;
+        const user = req.user;
 
-    try {
-        const productSql = `
-            SELECT 
-                idx AS product_idx,
-                name,
-                price,
-                image_url,
-                score,
-                created_at,
-                CASE
-                    WHEN (SELECT COUNT(*) FROM bookmark WHERE product_idx  = $1 AND account_idx = $2 ) >= 1
-                    THEN 1
-                    ELSE 0
-                END AS bookmarked
-            FROM
-                product 
-            WHERE idx = $1 AND deleted_at is NULL`;
+        const product = await query(
+            `
+            SELECT
+                product.idx,
+                product.category_idx,
+                product.name,
+                product.price,
+                product.image_url,
+                product.score,
+                product.created_at,
+                (
+                    SELECT
+                        bookmark.idx
+                    FROM
+                        bookmark
+                    WHERE
+                        account_idx = $1
+                    AND
+                        product_idx = product.idx
+                ) IS NOT NULL AS "bookmarked"
+            FROM    
+                product
+            WHERE
+                product.deleted_at IS NULL
+            AND
+                product.idx = $2
+            `,
+            [user.idx, productIdx]
+        );
 
-        const eventSql = `
-            WITH month_array AS (
+        const eventInfo = await query(
+            `
+             WITH month_array AS (
                 SELECT to_char(date_trunc('month', current_date) - interval '1 month' * series, 'YYYY-MM') AS month
                 FROM generate_series(0, 9) AS series
             ),
-            company_array AS (
-                SELECT idx, name 
-                FROM company
-            ),
             event_array AS (
-                SELECT 
-                    to_char(event_history.start_date, 'YYYY-MM') AS month,
-                    company.name AS company_name,
-                    CASE 
-                        WHEN event.type = '할인' THEN CAST(event_history.price AS VARCHAR)
-                        ELSE event.type 
-                    END AS event_type
-                FROM 
-                    event_history 
-                JOIN 
-                    event ON event_history.event_idx = event.idx
-                JOIN 
-                    company ON event_history.company_idx = company.idx
-                WHERE 
-                    event_history.product_idx = $1 AND
-                    event_history.start_date >= (SELECT min(date_trunc('month', current_date) - interval '1 month' * series) FROM generate_series(0, 9) AS series)
+                SELECT
+                    json_build_object(
+                        'companyIdx', event_history.company_idx,
+                        'eventType', event_history.event_idx,
+                        'price', event_history.price
+                    ) AS event_info,
+                    to_char(event_history.start_date, 'YYYY-MM') AS event_month
+                FROM
+                    event_history
+                WHERE
+                    event_history.product_idx = $1
+                    AND event_history.start_date >= (date_trunc('month', current_date) - interval '9 months')
             ),
-            result AS (
-                SELECT 
+            aggregated_events AS (
+                SELECT
                     month_array.month,
-                    company_array.name AS company_name,
-                    COALESCE(event_array.event_type, 'null') AS event_type
-                FROM 
-                    month_array 
-                CROSS JOIN 
-                    company_array 
-                LEFT JOIN 
-                    event_array  ON month_array.month = event_array.month AND company_array.name = event_array.company_name
-                ORDER BY month_array.month, company_name
+                    json_agg(event_array.event_info) FILTER (WHERE event_array.event_info IS NOT NULL) AS events
+                FROM
+                    month_array
+                LEFT JOIN
+                    event_array ON month_array.month = event_array.event_month
+                GROUP BY
+                    month_array.month
+                ORDER BY
+                    month_array.month DESC
             )
             SELECT 
-                month, 
-                json_object_agg(company_name, event_type) AS events
+                month,
+                events
             FROM 
-                result
-            GROUP BY 
-                month
-            ORDER BY 
-                month DESC   
-            `;
-        const productQueryResult = await pgPool.query(productSql, [productIdx, accountIdx]);
-        const eventQueryResult = await pgPool.query(eventSql, [productIdx]);
+                aggregated_events       
+            `,
+            [productIdx]
+        );
 
-        if (productQueryResult.rows.length == 0) {
-            throw new Error();
+        if (product.rows.length == 0) {
+            throw new BadRequestException("올바르지 않은 productIdx: idx가 없음");
         }
-        result.data = productQueryResult.rows[0];
-        result.data.eventsInfo = [];
+        if (eventInfo.rows.length == 0) {
+            throw new BadRequestException("올바르지 않은 productIdx: eventInfo가 없음");
+        }
 
-        eventQueryResult.rows.forEach((eventRow) => {
-            result.data.eventsInfo.push({
-                month: eventRow.month,
-                events: eventRow.events,
-            });
+        res.status(200).send({
+            data: {
+                product: product.rows[0],
+                eventInfo: eventInfo.rows,
+            },
+            authStatus: req.isLogin,
         });
-
-        res.status(200).send(result);
-    } catch (err) {
-        console.log(err);
-        next(err);
-    }
-});
-
+    })
+);
 //상품 추가하기
 router.post("/", uploadImg, adminAuth, async (req, res, next) => {
     const { category, name, price, eventInfo } = req.body;
@@ -419,7 +415,7 @@ router.post("/", uploadImg, adminAuth, async (req, res, next) => {
                             (SELECT idx FROM company WHERE name = $1),
                             $2,
                             (SELECT idx FROM event WHERE type = $3),
-                            $4,
+                            $4,2
                             $5
                           )
         `;
@@ -437,6 +433,8 @@ router.post("/", uploadImg, adminAuth, async (req, res, next) => {
     } catch (err) {
         await client.query("ROLLBACK");
         next(err);
+    } finally {
+        await client.release();
     }
 });
 
