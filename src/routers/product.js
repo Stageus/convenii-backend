@@ -9,6 +9,7 @@ const uploadImg = require("../middlewares/uploadImg");
 const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
+const e = require("express");
 const COMPANY_SIZE = 3;
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 /////////////---------------product---------/////////////////////
@@ -351,7 +352,7 @@ router.get(
                     event_history.product_idx = $1
                     AND event_history.start_date >= (date_trunc('month', current_date) - interval '9 months')
             ),
-            aggregated_events AS (
+            merge_events AS (
                 SELECT
                     month_array.month,
                     json_agg(event_array.event_info) FILTER (WHERE event_array.event_info IS NOT NULL) AS events
@@ -368,7 +369,7 @@ router.get(
                 month,
                 events
             FROM 
-                aggregated_events       
+                merge_events       
             `,
             [productIdx]
         );
@@ -383,60 +384,74 @@ router.get(
         res.status(200).send({
             data: {
                 product: product.rows[0],
-                eventInfo: eventInfo.rows,
+                history: eventInfo.rows,
             },
             authStatus: req.isLogin,
         });
     })
 );
 //상품 추가하기
-router.post("/", uploadImg, adminAuth, async (req, res, next) => {
-    const { category, name, price, eventInfo } = req.body;
-    const imageUrl = req.file.location;
-    const client = await pgPool.connect();
+router.post(
+    "/",
+    uploadImg,
+    adminAuth,
+    wrapper(async (req, res, next) => {
+        const { categoryIdx, name, price, eventInfo } = req.body;
+        const imageUrl = req.file.location;
+        const client = await pgPool.connect();
+        const companyIdxArray = [];
+        const eventIdxArray = [];
+        const eventPriceArray = [];
 
-    try {
-        await client.query("BEGIN");
+        eventInfo.forEach((event) => {
+            //companyIdx가 없으면 넣지 않는다
+            if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
+                companyIdxArray.push(event.companyIdx);
+                eventIdxArray.push(event.eventIdx);
+                if (!event.eventPrice) {
+                    event.eventPrice = null;
+                }
+                eventPriceArray.push(event.eventPrice);
+            }
+        });
 
-        const productSql = `
-            INSERT INTO product (category_idx, name, price, image_url)
-            VALUES (
-                (SELECT idx FROM category WHERE name = $1),
-                $2,
-                $3,
-                $4
-            )
-            RETURNING idx
-        `;
-        const productQueryResult = await client.query(productSql, [category, name, price, imageUrl]);
-        const productIdx = productQueryResult.rows[0].idx;
-        const eventSql = `INSERT INTO event_history (company_idx, product_idx, event_idx, start_date, price)
-                          VALUES (
-                            (SELECT idx FROM company WHERE name = $1),
-                            $2,
-                            (SELECT idx FROM event WHERE type = $3),
-                            $4,2
-                            $5
-                          )
-        `;
-        const today = new Date();
+        try {
+            await client.query("BEGIN");
+            const newProduct = await client.query(
+                `
+                INSERT INTO product (category_idx, name, price, image_url)
+                VALUES (
+                    $1,
+                    $2,
+                    $3,
+                    $4
+                )
+                RETURNING idx
+            `,
+                [categoryIdx, name, price, imageUrl]
+            );
+            const productIdx = newProduct.rows[0].idx;
 
-        for (let idx = 0; idx < eventInfo.length; idx++) {
-            const { companyName, eventType, price } = eventRow;
-            await client.query(eventSql, [companyName, productIdx, eventType, today, price]);
+            await client.query(
+                `
+                INSERT INTO event_history
+                    (start_date, product_idx, company_idx, event_idx, price )
+                VALUES
+                    (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
+                `,
+                [productIdx, companyIdxArray, eventIdxArray, eventPriceArray]
+            );
+
+            await client.query("COMMIT");
+            res.status(201).send();
+        } catch (err) {
+            await client.query("ROLLBACK");
+            next(err);
+        } finally {
+            await client.release();
         }
-
-        await client.query("COMMIT");
-        console.log(imageUrl);
-        console.log(eventInfo);
-        res.status(201).send();
-    } catch (err) {
-        await client.query("ROLLBACK");
-        next(err);
-    } finally {
-        await client.release();
-    }
-});
+    })
+);
 
 // productIdx 수정하기
 router.put("/:productIdx", adminAuth, async (req, res, next) => {
