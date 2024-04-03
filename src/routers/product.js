@@ -454,59 +454,101 @@ router.post(
 );
 
 // productIdx 수정하기
-router.put("/:productIdx", adminAuth, async (req, res, next) => {
-    const { category, name, price, imageUrl, eventInfo } = req.body;
-    const { productIdx } = req.params;
+router.put(
+    "/:productIdx",
+    uploadImg,
+    adminAuth,
+    wrapper(async (req, res, next) => {
+        const { categoryIdx, name, price, eventInfo } = req.body;
+        const { productIdx } = req.params;
 
-    const client = await pgPool.connect();
+        const client = await pgPool.connect();
+        const companyIdxArray = [];
+        const eventIdxArray = [];
+        const eventPriceArray = [];
+        eventInfo.forEach((event) => {
+            //companyIdx가 없으면 넣지 않는다
+            if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
+                companyIdxArray.push(event.companyIdx);
+                eventIdxArray.push(event.eventIdx);
+                if (!event.eventPrice) {
+                    event.eventPrice = null;
+                }
+                eventPriceArray.push(event.eventPrice);
+            }
+        });
+        const imageUrl = req.file ? req.file.location : null;
+        const updateParams = [categoryIdx, name, price, productIdx];
+        if (req.file) {
+            updateParams.push(imageUrl);
+        }
+        try {
+            await client.query("BEGIN");
+            // product 존재 여부 확인
+            const productExistenceCheck = await client.query(
+                `
+                SELECT idx
+                FROM product
+                WHERE idx = $1
+                `,
+                [productIdx]
+            );
 
-    try {
-        await client.query("BEGIN");
-        const updateSql = `
+            // 존재하지 않는 productIdx인 경우
+            if (productExistenceCheck.rows.length === 0) {
+                throw new BadRequestException("productIdx에 해당하는 product가 없음");
+            }
+            // product update
+            await client.query(
+                `
                 UPDATE
                     product
                 SET
-                    category_idx = (
-                        SELECT idx FROM category WHERE name = $1
-                    ),
+                    category_idx = $1,
                     name = $2,
-                    price = $3,
-                    image_url = $4
+                    price = $3
+                    ${imageUrl ? ", image_url = $5" : ""}
                 WHERE
-                    idx = $5`;
-        const deleteCurrentEventSql = `
+                    idx = $4            
+                `,
+                updateParams
+            );
+
+            // 헹사 update (깉은 월 행사 삭제)
+            await client.query(
+                `
                 DELETE
                 FROM
                     event_history
                 WHERE
                     product_idx = $1
                     AND start_date >= date_trunc('month', current_date)
-                    AND start_date < date_trunc('month', current_date) + interval '1 month'
-        `;
-        const eventSql = `INSERT INTO event_history (company_idx, product_idx, event_idx, start_date, price)
-                          VALUES (
-                            (SELECT idx FROM company WHERE name = $1),
-                            $2,
-                            (SELECT idx FROM event WHERE type = $3),
-                            current_date,
-                            $4
-                          )
-        `;
+                    AND start_date < date_trunc('month', current_date) + interval '1 month'                
+                `,
+                [productIdx]
+            );
 
-        await client.query(updateSql, [category, name, price, imageUrl, eventInfo]);
-        await client.query(deleteCurrentEventSql, [productIdx]);
-        eventInfo.forEach(async (eventRow) => {
-            const { companyName, eventType, price } = eventRow;
-            await client.query(eventSql, [companyName, productIdx, eventType, price]);
-        });
+            // 행사 삽입
+            await client.query(
+                `
+                INSERT INTO event_history
+                    (start_date, product_idx, company_idx, event_idx, price )
+                VALUES
+                    (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
+                `,
+                [productIdx, companyIdxArray, eventIdxArray, eventPriceArray]
+            );
 
-        await client.query("COMMIT");
-        res.status(201).send();
-    } catch (err) {
-        await client.query("ROLLBACK");
-        next(err);
-    }
-});
+            await client.query("COMMIT");
+            res.status(201).send();
+        } catch (err) {
+            await client.query("ROLLBACK");
+            next(err);
+        } finally {
+            client.release();
+        }
+    })
+);
 
 //productIdx 삭제하기
 router.delete("/:productIdx", adminAuth, async (req, res, next) => {
