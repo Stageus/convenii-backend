@@ -25,10 +25,15 @@ class ForbiddenException extends Exception {
         super(403, message);
     }
 }
-
+class UnauthorizedException extends Exception {
+    constructor(message) {
+        super(401, message);
+    }
+}
 module.exports = {
     Exception,
     NotFoundException,
     BadRequestException,
     ForbiddenException,
+    UnauthorizedException,
 };
