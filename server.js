@@ -13,6 +13,7 @@ const morganLogger = require("./src/middlewares/morganLogger");
 
 const { HTTP_PORT, HTTPS_PORT } = require("./src/config/portConfig");
 const httpConfig = require("./src/config/httpsConfig");
+const { Exception } = require("./src/modules/Exception");
 
 //middleWare--------------------------------------------//
 app.use(express.json());
@@ -26,6 +27,12 @@ app.use("/review", reviewApi);
 
 //error_handler---------------------------------//
 app.use((err, req, res, next) => {
+    console.log(err);
+    if (err instanceof Exception) {
+        return res.status(err.status).send({
+            message: err.message,
+        });
+    }
     if (err.status) {
         return res.status(err.status).send(err.message);
     }
