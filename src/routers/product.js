@@ -395,6 +395,8 @@ router.post(
     "/",
     uploadImg,
     adminAuth,
+    checkCondition("name"),
+    checkCondition("price"),
     wrapper(async (req, res, next) => {
         const { categoryIdx, name, price, eventInfo } = req.body;
         const imageUrl = req.file.location;
