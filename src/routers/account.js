@@ -63,24 +63,23 @@ router.post(
         res.status(201).send();
     })
 );
+
 //이메일 인증확인
-router.post("/verify-email/check", async (req, res, next) => {
-    const { email, verificationCode } = req.body;
-    try {
+router.post(
+    "/verify-email/check",
+    wrapper(async (req, res, next) => {
+        const { email, verificationCode } = req.body;
+
         const storedVerificationCode = await redisClient.get(`emailVerification:${email}`);
 
         if (storedVerificationCode !== verificationCode) {
-            const error = new Error("인증번호가 일치하지 않음");
-            error.status = 401;
-            throw error;
+            throw new UnauthorizedException("인증번호가 일치하지 않음");
         }
 
         await redisClient.set(`verifiedEmails:${email}`, "verified", "EX", 1800);
         res.status(201).send();
-    } catch (error) {
-        next(error);
-    }
-});
+    })
+);
 
 //회원가입
 router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("nickname"), async (req, res, next) => {
