@@ -196,33 +196,36 @@ router.post(
 );
 
 //내 정보 보기
-router.get("/", loginAuth, async (req, res, next) => {
-    const idx = req.user.idx;
-    const result = {
-        data: null,
-    };
-    try {
-        const sql = "SELECT * FROM account WHERE idx=$1";
-        const queryData = await pgPool.query(sql, [idx]);
+router.get(
+    "/",
+    loginAuth,
+    wrapper(async (req, res, next) => {
+        const user = req.user;
 
-        if (queryData.rows.length === 0) {
-            const error = new Error("해당하는 계정이 없음");
-            error.status = 404;
-            throw error;
+        const userData = await query(
+            `
+            SELECT
+                *
+            FROM
+                account
+            WHERE
+                idx=$1
+            `,
+            [user.idx]
+        );
+
+        if (userData.rows.length === 0) {
+            throw new NotFoundException("해당하는 계정이 없음");
         }
 
-        result.data = {
-            idx: queryData.rows[0].idx,
-            email: queryData.rows[0].email,
-            nickname: queryData.rows[0].nickname,
-            created_at: queryData.rows[0].created_at,
-        };
-        res.status(200).send(result);
-    } catch (error) {
-        next(error);
-    }
-});
-
+        res.status(200).send({
+            idx: userData.rows[0].idx,
+            email: userData.rows[0].email,
+            nickname: userData.rows[0].nickname,
+            created_at: userData.rows[0].created_at,
+        });
+    })
+);
 //회원 탈퇴하기
 router.delete("/", loginAuth, async (req, res, next) => {
     const idx = req.user.idx;
