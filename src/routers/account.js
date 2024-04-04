@@ -226,41 +226,58 @@ router.get(
         });
     })
 );
+
 //회원 탈퇴하기
-router.delete("/", loginAuth, async (req, res, next) => {
-    const idx = req.user.idx;
-    try {
-        const sql = "UPDATE account SET deleted_at = NOW() WHERE idx = $1";
-        await pgPool.query(sql, [idx]);
+router.delete(
+    "/",
+    loginAuth,
+    wrapper(async (req, res, next) => {
+        const user = req.user;
 
-        //토큰 삭제 필요..?
+        await pgPool.query(
+            `
+            UPDATE
+                account
+            SET
+                deleted_at = NOW()
+            WHERE
+                idx = $1
+            `,
+            [user.idx]
+        );
+
         res.status(201).send();
-    } catch (error) {
-        next(error);
-    }
-});
-
+    })
+);
 /// 비로그인 상태에서 비밀번호 변경하기
-router.put("/pw", checkCondition("pw"), async (req, res, next) => {
-    const { email, pw } = req.body;
-    try {
+router.put(
+    "/pw",
+    checkCondition("pw"),
+    wrapper(async (req, res, next) => {
+        const { email, pw } = req.body;
+
         const verified = await redisClient.get(`verifiedEmails:${email}`);
 
         if (!verified) {
-            const error = new Error("인증되지 않은 이메일임");
-            error.status = 403;
-            throw error;
+            throw new ForbiddenException("인증되지 않은 이메일임");
         }
 
         const hashedPw = await bcrypt.hash(pw, 10);
-        const sql = "UPDATE account SET password=$1 WHERE idx=$2";
-        await pgPool.query(sql, [hashedPw, user.idx]);
+        await query(
+            `
+            UPDATE
+                account
+            SET
+                password=$1
+            WHERE
+                idx=$2
+            `,
+            [hashedPw, user.idx]
+        );
 
         res.status(201).send();
-    } catch (error) {
-        next(error);
-    }
-});
+    })
+);
 
 // 로그인 상태에서 비밀번호 변경하기
 router.put("/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) => {
