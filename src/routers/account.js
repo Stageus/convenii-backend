@@ -8,18 +8,33 @@ const loginAuth = require("../middlewares/loginAuth");
 const sendVerificationEmail = require("../modules/sendVerificationEmail");
 const generateVerificationCode = require("../modules/generateVerificationCode");
 const issueToken = require("../modules/issueToken");
+const wrapper = require("../modules/wrapper");
+const query = require("../modules/query");
+const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 
 //이메일 인증번호 발급 (비로그인 상태시)
-router.post("/verify-email/send", checkCondition("email"), async (req, res, next) => {
-    const { email } = req.body;
-    try {
-        const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL";
-        const emailQueryData = await pgPool.query(emailSql, [email]);
+router.post(
+    "/verify-email/send",
+    checkCondition("email"),
+    wrapper(async (req, res, next) => {
+        const { email } = req.body;
 
-        if (emailQueryData.rows.length > 0) {
-            const error = new Error("이메일이 중복됨");
-            error.status = 400;
-            throw error;
+        const emailData = await query(
+            `
+            SELECT
+                email
+            FROM
+                account
+            WHERE
+                email = $1
+             AND
+                deleted_at IS NULL
+            `,
+            [email]
+        );
+
+        if (emailData.rows.length > 0) {
+            throw new BadRequestException("이메일이 중복됨");
         }
         const verificationCode = generateVerificationCode();
 
@@ -27,10 +42,8 @@ router.post("/verify-email/send", checkCondition("email"), async (req, res, next
 
         await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
         res.status(201).send();
-    } catch (error) {
-        next(error);
-    }
-});
+    })
+);
 
 //이메일 인증번호 발급 (로그인 상태시)
 router.post("/verify-email/send/login", loginAuth, checkCondition("email"), async (req, res, next) => {
@@ -112,14 +125,14 @@ router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("
     } catch (error) {
         next(error);
     }
-})
+});
 
 //로그인
 router.post("/login", checkCondition("email"), checkCondition("pw"), async (req, res, next) => {
     const { email, pw } = req.body;
     const result = {
-        data: null
-    }
+        data: null,
+    };
 
     try {
         const trimEmail = email.trim();
@@ -135,52 +148,52 @@ router.post("/login", checkCondition("email"), checkCondition("pw"), async (req,
         }
 
         const tokenPayload = {
-            "idx": user.idx,
-            "email": user.email,
-            "rank": user.rank_idx
+            idx: user.idx,
+            email: user.email,
+            rank: user.rank_idx,
         };
 
         const tokenOptions = {
-            "issuer": user.nickname,
-            "expiresIn": "10m" // 임시로 10분
-        }
+            issuer: user.nickname,
+            expiresIn: "10m", // 임시로 10분
+        };
 
         const accessToken = issueToken(tokenPayload, tokenOptions);
 
-        result.data = { "accessToken": accessToken };
+        result.data = { accessToken: accessToken };
         res.status(200).send(result);
     } catch (error) {
         next(error);
     }
-})
+});
 
-//내 정보 보기 
+//내 정보 보기
 router.get("/", loginAuth, async (req, res, next) => {
-    const idx = req.user.idx
+    const idx = req.user.idx;
     const result = {
-        "data": null
-    }
+        data: null,
+    };
     try {
-        const sql = "SELECT * FROM account WHERE idx=$1"
-        const queryData = await pgPool.query(sql, [idx])
+        const sql = "SELECT * FROM account WHERE idx=$1";
+        const queryData = await pgPool.query(sql, [idx]);
 
         if (queryData.rows.length === 0) {
-            const error = new Error("해당하는 계정이 없음")
-            error.status = 404
-            throw error
+            const error = new Error("해당하는 계정이 없음");
+            error.status = 404;
+            throw error;
         }
 
         result.data = {
-            "idx": queryData.rows[0].idx,
-            "email": queryData.rows[0].email,
-            "nickname": queryData.rows[0].nickname,
-            "created_at": queryData.rows[0].created_at
-        }
-        res.status(200).send(result)
+            idx: queryData.rows[0].idx,
+            email: queryData.rows[0].email,
+            nickname: queryData.rows[0].nickname,
+            created_at: queryData.rows[0].created_at,
+        };
+        res.status(200).send(result);
     } catch (error) {
-        next(error)
+        next(error);
     }
-})
+});
 
 //회원 탈퇴하기
 router.delete("/", loginAuth, async (req, res, next) => {
@@ -194,7 +207,7 @@ router.delete("/", loginAuth, async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-})
+});
 
 /// 비로그인 상태에서 비밀번호 변경하기
 router.put("/pw", checkCondition("pw"), async (req, res, next) => {
@@ -247,4 +260,4 @@ router.put("/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) 
     }
 });
 
-module.exports = router
+module.exports = router;
