@@ -61,43 +61,98 @@ router.post(
 );
 
 // 북마크 가져오기
-router.get("/all", loginAuth, async (req, res, next) => {
-    const accountIdx = req.user.idx;
-    const result = {
-        data: null,
-    };
-    try {
-        const sql = `
-            SELECT
-                p.idx,
-                p.category_idx,
-                p.name,
-                p.price,
-                p.image_url,
-                p.score
-            FROM 
-                product p
-            INNER JOIN
-                bookmark b ON p.idx = b.product_idx
-            WHERE 
-                b.account_idx = $1
-                AND
-                p.deleted_at IS NULL
-        `;
-        const queryData = await pgPool.query(sql, [accountIdx]);
-        result.data = queryData.rows;
+router.get(
+    "/all",
+    loginAuth,
+    wrapper(async (req, res, next) => {
+        const user = req.user;
+        const { page } = req.query;
+        const pageSizeOption = 10;
 
-        res.status(200).send(result);
-    } catch (error) {
-        next(error);
-    }
-});
+        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
+            throw new BadRequestException("page 입력 오류");
+        }
+
+        const products = await query(
+            `
+            --북마크한 product_idx
+            WITH possilbe_product AS (
+                SELECT
+                    DISTINCT bookmark.product_idx AS idx
+                FROM
+                    bookmark
+                WHERE
+                    account_idx = $1
+            )
+            SELECT
+                product.idx,
+                product.category_idx,
+                product.name,
+                product.price,
+                product.image_url,
+                product.score,
+                product.created_at,
+                --북마크 여부
+                (
+                    SELECT
+                        bookmark.idx
+                    FROM
+                        bookmark
+                    WHERE
+                        account_idx = $1
+                    AND
+                        product_idx = product.idx
+                ) IS NOT NULL AS "bookmarked",
+                -- 이벤트 정보
+                ARRAY (
+                    SELECT
+                        json_build_object(
+                            'companyIdx', event_history.company_idx,
+                            'eventType', event_history.event_idx,
+                            'price', price
+                        )
+                    FROM
+                        event_history
+                    WHERE
+                        event_history.product_idx = product.idx
+                    AND
+                        event_history.start_date >= date_trunc('month', current_date)
+                    AND
+                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                    ORDER BY
+                        event_history.company_idx
+                ) AS eventInfo
+            FROM    
+                product
+            LEFT JOIN
+                possilbe_product
+            ON
+                product.idx = possilbe_product.idx
+            WHERE
+                product.deleted_at IS NULL
+            AND
+                possilbe_product.idx IS NOT NULL
+            ORDER BY
+                product.name
+            LIMIT $2 OFFSET $3            
+            `,
+            [user.idx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]
+        );
+
+        res.status(200).send({
+            data: products,
+        });
+    })
+);
 
 // 북마크 삭제하기
-router.delete("/product/:productIdx", loginAuth, async (req, res, next) => {
-    const { productIdx } = req.params;
-    const accountIdx = req.user.idx;
-    try {
+router.delete(
+    "/product/:productIdx",
+    loginAuth,
+    wrapper(async (req, res, next) => {
+        const { productIdx } = req.params;
+        const accountIdx = req.user.idx;
+
         const prodcutExistingSql = "SELECT * FROM product WHERE idx = $1";
         const productQueryData = await pgPool.query(prodcutExistingSql, [productIdx]);
         if (productQueryData.rows.length === 0) {
@@ -118,9 +173,7 @@ router.delete("/product/:productIdx", loginAuth, async (req, res, next) => {
         await pgPool.query(deleteSql, [accountIdx, productIdx]);
 
         res.status(201).send();
-    } catch (error) {
-        next(error);
-    }
-});
+    })
+);
 
 module.exports = router;
