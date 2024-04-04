@@ -46,26 +46,23 @@ router.post(
 );
 
 //이메일 인증번호 발급 (로그인 상태시)
-router.post("/verify-email/send/login", loginAuth, checkCondition("email"), async (req, res, next) => {
-    const { email } = req.body;
-    try {
+router.post(
+    "/verify-email/send/login",
+    loginAuth,
+    checkCondition("email"),
+    wrapper(async (req, res, next) => {
+        const { email } = req.body;
+
         if (req.user.email !== email) {
-            const error = new Error("본인 이메일이 아님");
-            error.status = 401;
-            throw error;
+            throw new UnauthorizedException("본인 이메일이 아님");
         }
 
         const verificationCode = generateVerificationCode();
-
         await sendVerificationEmail(email, verificationCode);
-
         await redisClient.set(`emailVerification:${email}`, verificationCode, "EX", 180);
         res.status(201).send();
-    } catch (error) {
-        next(error);
-    }
-});
-
+    })
+);
 //이메일 인증확인
 router.post("/verify-email/check", async (req, res, next) => {
     const { email, verificationCode } = req.body;
