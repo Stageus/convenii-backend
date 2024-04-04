@@ -9,7 +9,6 @@ const uploadImg = require("../middlewares/uploadImg");
 const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
-
 const COMPANY_SIZE = 3;
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 /////////////---------------product---------/////////////////////
@@ -268,6 +267,7 @@ router.get(
                 ) AS eventInfo
             FROM    
                 product
+            --필터링 한 product_idx만 가져오기
             LEFT JOIN
                 possilbe_product
             ON
@@ -312,6 +312,7 @@ router.get(
                 product.image_url,
                 product.score,
                 product.created_at,
+            -- 북마크 여부
                 (
                     SELECT
                         bookmark.idx
@@ -334,10 +335,12 @@ router.get(
 
         const eventInfo = await query(
             `
+            --최근 10개월 date가져오기
              WITH month_array AS (
                 SELECT to_char(date_trunc('month', current_date) - interval '1 month' * series, 'YYYY-MM') AS month
                 FROM generate_series(0, 9) AS series
             ),
+            --해당 상품의 모든 이벤트 히스토리 가져오기
             event_array AS (
                 SELECT
                     json_build_object(
@@ -352,6 +355,7 @@ router.get(
                     event_history.product_idx = $1
                     AND event_history.start_date >= (date_trunc('month', current_date) - interval '9 months')
             ),
+            -- CTE 합치기
             merge_events AS (
                 SELECT
                     month_array.month,
@@ -509,6 +513,7 @@ router.put(
                     category_idx = $1,
                     name = $2,
                     price = $3
+                --이미지가 없다면 image_url은 수정하지 않는다
                     ${imageUrl ? ", image_url = $5" : ""}
                 WHERE
                     idx = $4            
