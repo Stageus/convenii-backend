@@ -280,32 +280,40 @@ router.put(
 );
 
 // 로그인 상태에서 비밀번호 변경하기
-router.put("/pw/login", loginAuth, checkCondition("pw"), async (req, res, next) => {
-    const { email, pw } = req.body;
-    try {
+router.put(
+    "/pw/login",
+    loginAuth,
+    checkCondition("pw"),
+    wrapper(async (req, res, next) => {
+        const { email, pw } = req.body;
+
         const user = req.user;
         if (user.email !== email) {
-            const error = new Error("본인 이메일이 아님");
-            error.status = 401;
-            throw error;
+            throw new UnauthorizedException("본인 이메일이 아님");
         }
 
         const verified = await redisClient.get(`verifiedEmails:${email}`);
 
         if (!verified) {
-            const error = new Error("인증되지 않은 이메일임");
             error.status = 403;
-            throw error;
+            throw new ForbiddenException("인증되지 않은 이메일임");
         }
 
         const hashedPw = await bcrypt.hash(pw, 10);
-        const sql = "UPDATE account SET password=$1 WHERE idx=$2";
-        await pgPool.query(sql, [hashedPw, user.idx]);
+        await query(
+            `
+            UPDATE
+                account
+            SET
+                password =$1
+            WHERE
+                idx = $2
+            `,
+            [hashedPw, user.idx]
+        );
 
         res.status(201).send();
-    } catch (error) {
-        next(error);
-    }
-});
+    })
+);
 
 module.exports = router;
