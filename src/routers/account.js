@@ -148,23 +148,32 @@ router.post(
 );
 
 //로그인
-router.post("/login", checkCondition("email"), checkCondition("pw"), async (req, res, next) => {
-    const { email, pw } = req.body;
-    const result = {
-        data: null,
-    };
+router.post(
+    "/login",
+    checkCondition("email"),
+    checkCondition("pw"),
+    wrapper(async (req, res, next) => {
+        const { email, pw } = req.body;
 
-    try {
         const trimEmail = email.trim();
-        const sql = "SELECT * FROM account WHERE email =$1 AND deleted_at IS NULL";
-        const queryData = await pgPool.query(sql, [trimEmail]);
-        const user = queryData.rows[0];
+        const userData = await query(
+            `
+            SELECT
+                * 
+            FROM 
+                account
+            WHERE 
+                email =$1 
+            AND 
+                deleted_at IS NULL
+              `,
+            [trimEmail]
+        );
+        const user = userData.rows[0];
 
         const passwordMatch = await bcrypt.compare(pw, user.password);
         if (!passwordMatch) {
-            const error = new Error("로그인 실패");
-            error.status = 401;
-            throw error;
+            throw new UnauthorizedException("로그인 실패");
         }
 
         const tokenPayload = {
@@ -180,12 +189,11 @@ router.post("/login", checkCondition("email"), checkCondition("pw"), async (req,
 
         const accessToken = issueToken(tokenPayload, tokenOptions);
 
-        result.data = { accessToken: accessToken };
-        res.status(200).send(result);
-    } catch (error) {
-        next(error);
-    }
-});
+        res.status(200).send({
+            accessToken: accessToken,
+        });
+    })
+);
 
 //내 정보 보기
 router.get("/", loginAuth, async (req, res, next) => {
