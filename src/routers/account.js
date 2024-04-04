@@ -82,46 +82,71 @@ router.post(
 );
 
 //회원가입
-router.post("/", checkCondition("email"), checkCondition("pw"), checkCondition("nickname"), async (req, res, next) => {
-    const { email, pw, nickname } = req.body;
+router.post(
+    "/",
+    checkCondition("email"),
+    checkCondition("pw"),
+    checkCondition("nickname"),
+    wrapper(async (req, res, next) => {
+        const { email, pw, nickname } = req.body;
+        const emailData = query(
+            `
+            SELECT
+                email
+            FROM
+                account
+            WHERE
+                email = $1
+            AND
+                deleted_at IS NULL
+            `,
+            [email]
+        );
 
-    try {
-        const emailSql = "SELECT email FROM account WHERE email = $1 AND deleted_at IS NULL";
-        const emailQueryData = await pgPool.query(emailSql, [email]);
-
-        if (emailQueryData.rows.length > 0) {
-            const error = new Error("이메일이 중복됨");
-            error.status = 400;
-            throw error;
+        if (emailData.rows.length > 0) {
+            throw BadRequestException("이메일이 중복됨");
         }
 
         const verified = await redisClient.get(`verifiedEmails:${email}`);
 
         if (!verified) {
-            const error = new Error("인증되지 않은 이메일임");
-            error.status = 403;
-            throw error;
+            throw new ForbiddenException("인증되지 않은 이메일임");
         }
 
         const hashedPw = await bcrypt.hash(pw, 10);
 
-        const nicknameSql = "SELECT nickname FROM account WHERE nickname = $1 AND deleted_at IS NULL";
-        const nicknameQueryData = await pgPool.query(nicknameSql, [nickname]);
+        const nicknameQueryData = await query(
+            `
+            SELECT
+                nickname
+            FROM
+                account
+            WHERE
+                nickname = $1
+            AND
+                deleted_at IS NULL
+            `,
+            [nickname]
+        );
 
         if (nicknameQueryData.rows.length > 0) {
-            const error = new Error("닉네임이 중복됨");
-            error.status = 400;
-            throw error;
+            throw BadRequestException("닉네임이 중복됨");
         }
 
         const insertSql = "INSERT INTO account (email,password,nickname) VALUES ($1,$2,$3)";
-        await pgPool.query(insertSql, [email, hashedPw, nickname]);
+        await query(
+            `
+            INSERT INTO account
+                (email,password,nickname)
+            VALUES
+                ($1,$2,$3)
+            `,
+            [email, hashedPw, nickname]
+        );
 
         res.status(201).send();
-    } catch (error) {
-        next(error);
-    }
-});
+    })
+);
 
 //로그인
 router.post("/login", checkCondition("email"), checkCondition("pw"), async (req, res, next) => {
