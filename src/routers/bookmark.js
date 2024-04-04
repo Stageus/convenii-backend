@@ -151,26 +151,52 @@ router.delete(
     loginAuth,
     wrapper(async (req, res, next) => {
         const { productIdx } = req.params;
-        const accountIdx = req.user.idx;
+        const user = req.user;
 
-        const prodcutExistingSql = "SELECT * FROM product WHERE idx = $1";
-        const productQueryData = await pgPool.query(prodcutExistingSql, [productIdx]);
-        if (productQueryData.rows.length === 0) {
-            const error = new Error("존재하지 않는 상품임");
-            error.status = 400;
-            throw error;
+        const product = await query(
+            `
+            SELECT
+                *
+            FROM
+                product
+            WHERE
+                idx = $1
+            `,
+            [productIdx]
+        );
+        if (product.rows.length === 0) {
+            throw new BadRequestException("존재하지 않는 상품임");
         }
 
-        const bookmarkExistingSql = "SELECT * FROM bookmark WHERE account_idx=$1 AND product_idx=$2";
-        const bookmarkQueryData = await pgPool.query(bookmarkExistingSql, [accountIdx, productIdx]);
-        if (bookmarkQueryData.rows.length === 0) {
-            const error = new Error("북마크 되어 있지 않은 상품임");
-            error.status = 401;
-            throw error;
+        const bookmarkCheck = await query(
+            `
+            SELECT
+                *
+            FROM
+                bookmark
+            WHERE
+                account_idx=$1
+            AND
+                product_idx=$2
+            `,
+            [user.idx, productIdx]
+        );
+        if (bookmarkCheck.rows.length === 0) {
+            throw new UnauthorizedException("북마크 되어 있지 않은 상품임");
         }
 
-        const deleteSql = "DELETE FROM bookmark WHERE account_idx=$1 AND product_idx=$2";
-        await pgPool.query(deleteSql, [accountIdx, productIdx]);
+        await query(
+            `
+            DELETE
+            FROM
+                bookmark
+            WHERE
+                account_idx=$1
+            AND
+                product_idx=$2
+        `,
+            [user.idx, productIdx]
+        );
 
         res.status(201).send();
     })
