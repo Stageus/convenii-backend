@@ -115,7 +115,7 @@ router.post(
 
         const hashedPw = await bcrypt.hash(pw, 10);
 
-        const nicknameQueryData = await query(
+        const nicknameData = await query(
             `
             SELECT
                 nickname
@@ -129,11 +129,10 @@ router.post(
             [nickname]
         );
 
-        if (nicknameQueryData.rows.length > 0) {
+        if (nicknameData.rows.length > 0) {
             throw BadRequestException("닉네임이 중복됨");
         }
 
-        const insertSql = "INSERT INTO account (email,password,nickname) VALUES ($1,$2,$3)";
         await query(
             `
             INSERT INTO account
