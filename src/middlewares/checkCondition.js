@@ -5,6 +5,8 @@ const patterns = {
     score: /^[0-5]$/,
     content: /^$|.{5,100}$/,
     page: /^[1-9]\d*$/,
+    name: /^[가-힣a-zA-Z0-9]{2,40}$/,
+    price: /^(?:[1-9][0-9]{2,6}|10000000)$/,
 };
 
 const checkCondition =
