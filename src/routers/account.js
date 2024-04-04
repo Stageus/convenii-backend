@@ -295,7 +295,6 @@ router.put(
         const verified = await redisClient.get(`verifiedEmails:${email}`);
 
         if (!verified) {
-            error.status = 403;
             throw new ForbiddenException("인증되지 않은 이메일임");
         }
 
