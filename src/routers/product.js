@@ -9,7 +9,7 @@ const uploadImg = require("../middlewares/uploadImg");
 const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
-const e = require("express");
+
 const COMPANY_SIZE = 3;
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 /////////////---------------product---------/////////////////////
