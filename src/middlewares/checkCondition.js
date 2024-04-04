@@ -8,6 +8,7 @@ const patterns = {
     name: /^[가-힣a-zA-Z0-9]{2,40}$/,
     price: /^(?:[1-9][0-9]{2,6}|10000000)$/,
 };
+const { BadRequestException } = require("../modules/Exception");
 
 const checkCondition =
     (input, trim = false) =>
@@ -18,9 +19,7 @@ const checkCondition =
                 value = value.trim();
             }
             if (!patterns[input].test(value)) {
-                const error = new Error(`${input}이(가) 입력 양식에 맞지 않음`);
-                error.status = 400;
-                throw error;
+                throw new BadRequestException(`${input}이(가) 입력 양식에 맞지 않음`);
             }
             next();
         } catch (error) {
