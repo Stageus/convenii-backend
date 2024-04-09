@@ -3,10 +3,12 @@ class Category {
      * @type {number}
      */
     idx;
+
     /**
      * @type {string}
      */
     name;
+
     /**
      *
      * @param {{
@@ -19,3 +21,5 @@ class Category {
         this.name = data.name;
     }
 }
+
+module.exports = Product;
