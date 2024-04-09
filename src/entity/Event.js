@@ -2,31 +2,25 @@ class Event {
     /**
      * @type {number}
      */
-    idx;
-
-    /**
-     * @type {string}
-     */
-    type;
-
+    companyIdx;
     /**
      * @type {number}
      */
-    priority;
-
+    eventIdx;
     /**
-     *
+     * @type { string | null}
+     */
+    price;
+    /**
      * @param {{
-     *  idx: number;
-     *  type: string;
-     *  priority: number;
-     * }} data
+     *  companyIdx: number;
+     *  eventIdx: number;
+     *  price: string | null;
+     * }} datass
      */
     constructor(data) {
-        this.idx = data.idx;
-        this.type = data.type;
-        this.priority = data.priority;
+        this.companyIdx = data.companyIdx;
+        this.eventIdx = data.eventIdx;
+        this.price = data.price;
     }
 }
-
-module.exports = Event;
