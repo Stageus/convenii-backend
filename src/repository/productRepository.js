@@ -10,7 +10,7 @@ const query = require("../modules/query");
  *  idx: number;
  *  categoryIdx: number;
  *  name: string;
- *  price: number;
+ *  price: string;
  *  img: string;
  *  score: number;
  *  createdAt: Date;
@@ -56,9 +56,15 @@ const getProductData = async (userIdx, productIdx) => {
 /**
  *
  * @param {number} productIdx
- * @returns {Promise<{
- *
- * }>}
+ * @returns {Promise<Array<{
+ *      month: string,
+ *      events: Array<{
+ *          companyIdx: number,
+ *          eventType: number,
+ *          price: string | null
+ *      }>
+ *     }>>
+ * }
  */
 const getEventHistoryData = async (productIdx) => {
     const eventInfoSelectResult = await query(

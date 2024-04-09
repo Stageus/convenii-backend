@@ -1,13 +1,14 @@
-const query = require("../modules/query");
+const CreateProductDto = require("../dto/CreateProductDto");
+
 const { getProductData } = require("../repository/productRepository");
 
 const getProductByIdx = async (user, productIdx) => {
-    const product = getProductData(user.idx, productIdx);
-    if (!product) {
+    const productData = await getProductData(user.idx, productIdx);
+    if (!productData) {
         throw new NotFoundException("Cannot find product");
     }
 
-    //const product = Product.createProduct(proudctSelectResult.rows[0]);
+    const product = CreateProductDto.createProduct(productData);
 
     return {
         product,

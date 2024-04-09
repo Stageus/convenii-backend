@@ -5,9 +5,9 @@ class Product {
     idx;
 
     /**
-     * @type {Category}
+     * @type {number}
      */
-    category;
+    categoryIdx;
 
     /**
      * @type {string}
@@ -42,7 +42,7 @@ class Product {
     /**
      * @param {{
      *  idx: number;
-     *  category: Category;
+     *  categoryIdx: number;
      *  name: string;
      *  price: number;
      *  productImg: string;
@@ -53,7 +53,7 @@ class Product {
      */
     constructor(data) {
         this.idx = data.idx;
-        this.category = data.category;
+        this.categoryIdx = data.categoryIdx;
         this.name = data.name;
         this.price = data.price;
         this.productImg = data.productImg;
