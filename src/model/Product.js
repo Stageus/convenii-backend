@@ -3,14 +3,17 @@ class Product {
      * @type {number}
      */
     idx;
+
     /**
      * @type {Category}
      */
     category;
+
     /**
      * @type {string}
      */
     name;
+
     /**
      * @type {number}
      */
