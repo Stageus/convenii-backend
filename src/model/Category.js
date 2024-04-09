@@ -22,4 +22,4 @@ class Category {
     }
 }
 
-module.exports = Product;
+module.exports = Category;
