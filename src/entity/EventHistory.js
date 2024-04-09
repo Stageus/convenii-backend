@@ -1,47 +1,40 @@
-const { Event } = require("./Event");
-
 class EventHistory {
-    /**
-     * @type {number}
-     */
-    companyIdx;
-
-    /**
-     * @type {number}
-     */
-    productidx;
-
-    /**
-     * @type {Event}
-     */
-    event;
-
     /**
      * @type {Date}
      */
     month;
 
     /**
-     * @type {number}
+     * @type {
+     *      Array<{
+     *          companyIdx: number,
+     *          eventIdx: number,
+     *          price: string | null
+     *      }>
+     * }
      */
-    price;
+    events;
 
     /**
-     *
      * @param {{
-     *  compnayIdx = number;
-     *  productIdx: number;
-     *  event: Event;
-     *  month: Date;
-     *  price: number;
+     *  month: string,
+     *  events: Array<{
+     *      companyIdx: number,
+     *      eventIdx: number,
+     *      price: string | null
+     *  }>
      * }} data
      */
     constructor(data) {
-        this.companyIdx = data.companyIdx;
-        this.productIdx = data.productIdx;
-        this.event = data.event;
         this.month = data.month;
-        this.price = data.price;
+        this.events = data.events.map(
+            (eventData) =>
+                new Event({
+                    companyIdx: eventData.companyIdx,
+                    eventIdx: eventData.eventIdx,
+                    price: eventData.price,
+                })
+        );
     }
 }
 
