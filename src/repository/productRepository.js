@@ -11,7 +11,7 @@ const query = require("../modules/query");
  *  categoryIdx: number;
  *  name: string;
  *  price: string;
- *  img: string;
+ *  productImg: string;
  *  score: number;
  *  createdAt: Date;
  *  bookmarked: boolean;
@@ -25,7 +25,7 @@ const getProductData = async (userIdx, productIdx) => {
             category.name AS "categoryName",
             product.name,
             product.price,
-            product.image_url AS "img",
+            product.image_url AS "productImg",
             product.score,
             product.created_at AS "createdAt",
             (
@@ -57,13 +57,14 @@ const getProductData = async (userIdx, productIdx) => {
  *
  * @param {number} productIdx
  * @returns {Promise<Array<{
- *      month: string,
+ *      month: Date,
  *      events: Array<{
  *          companyIdx: number,
- *          eventType: number,
+ *          eventIdx: number,
  *          price: string | null
  *      }>
  *     }>>
+ *
  * }
  */
 const getEventHistoryData = async (productIdx) => {
@@ -77,7 +78,7 @@ const getEventHistoryData = async (productIdx) => {
                 SELECT
                     json_build_object(
                         'companyIdx', event_history.company_idx,
-                        'eventType', event_history.event_idx,
+                        'eventIdx', event_history.event_idx,
                         'price', event_history.price
                     ) AS event_info,
                     to_char(event_history.start_date, 'YYYY-MM') AS event_month

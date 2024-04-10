@@ -37,7 +37,7 @@ class Product {
     /**
      * @type {boolean}
      */
-    bookmarkState;
+    bookmarked;
 
     /**
      * @param {{
@@ -48,7 +48,7 @@ class Product {
      *  productImg: string;
      *  score: number;
      *  createdAt: Date;
-     *  bookmarkState: boolean;
+     *  bookmarked: boolean;
      * }} data
      */
     constructor(data) {
@@ -59,7 +59,7 @@ class Product {
         this.productImg = data.productImg;
         this.score = data.score;
         this.createdAt = data.createdAt;
-        this.bookmarkState = data.bookmarkState;
+        this.bookmarked = data.bookmarked;
     }
 }
 

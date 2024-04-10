@@ -1,5 +1,5 @@
 const { BadRequestException } = require("../modules/Exception");
-const { Product } = require("../entity/Product");
+const Product = require("../entity/Product");
 class CreateProductDto {
     /**
      * @type {number}
@@ -39,7 +39,7 @@ class CreateProductDto {
     /**
      * @type {boolean}
      */
-    bookmarkState;
+    bookmarked;
 
     /**
      * @param {{
@@ -50,7 +50,7 @@ class CreateProductDto {
      *  productImg: string;
      *  score: number;
      *  createdAt: Date;
-     *  bookmarkState: boolean;
+     *  bookmarked: boolean;
      * }} data
      */
     constructor(data) {
@@ -61,7 +61,7 @@ class CreateProductDto {
         this.productImg = data.productImg;
         this.score = data.score;
         this.createdAt = data.createdAt;
-        this.bookmarkState = data.bookmarkState;
+        this.bookmarked = data.bookmarked;
     }
 
     validate() {
@@ -77,17 +77,18 @@ class CreateProductDto {
         if (typeof this.price !== "string" || parseInt(this.price) <= 0) {
             throw new BadRequestException("price 오류");
         }
-        if (typeof this.productImg !== "string" || !this.productImg.trim()) {
+        if (typeof this.productImg !== null && typeof this.productImg !== "string") {
+            console.log(this.productImg);
             throw new BadRequestException("productImg 오류");
         }
-        if (typeof this.score !== "number" || this.score < 0 || this.score > 5) {
+        if (typeof this.score !== null && (0 > parseFloat(this.score) || 5 < parseFloat(this.score))) {
             throw new BadRequestException("score 오류");
         }
         if (!(this.createdAt instanceof Date) || isNaN(this.createdAt.getTime())) {
             throw new BadRequestException("createdAt 오류");
         }
-        if (typeof this.bookmarkState !== "boolean") {
-            throw new BadRequestException("bookmarkState  오류");
+        if (typeof this.bookmarked !== "boolean") {
+            throw new BadRequestException("bookmarked  오류");
         }
     }
 
@@ -98,6 +99,7 @@ class CreateProductDto {
      */
     createProduct() {
         this.validate();
+
         return new Product({
             idx: this.idx,
             categoryIdx: this.categoryIdx,
@@ -106,7 +108,7 @@ class CreateProductDto {
             productImg: this.productImg,
             score: this.score,
             createdAt: this.createdAt,
-            bookmarkState: this.bookmarkState,
+            bookmarked: this.bookmarked,
         });
     }
 }
