@@ -10,7 +10,7 @@ const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 
-const { getProductByIdx } = require("../service/product.service");
+const { getProductByIdx, getProductAll } = require("../service/product.service");
 
 const COMPANY_SIZE = 3;
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
@@ -31,62 +31,9 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
         const { page } = req.query;
-        const pageSizeOption = 10;
-
-        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
-            throw new BadRequestException("page 입력 오류");
-        }
-        const products = await query(
-            `
-            SELECT
-                product.idx,
-                product.category_idx,
-                product.name,
-                product.price,
-                product.image_url,
-                product.score,
-                product.created_at,
-                (
-                    SELECT
-                        bookmark.idx
-                    FROM
-                        bookmark
-                    WHERE
-                        account_idx = $1
-                    AND
-                        product_idx = product.idx
-                ) IS NOT NULL AS "bookmarked",
-                ARRAY (
-                    SELECT
-                        json_build_object(
-                            'companyIdx', event_history.company_idx,
-                            'eventType', event_history.event_idx,
-                            'price', price
-                        )
-                    FROM
-                        event_history
-                    WHERE
-                        event_history.product_idx = product.idx
-                    AND
-                        event_history.start_date >= date_trunc('month', current_date)
-                    AND
-                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-                    ORDER BY
-                        event_history.company_idx
-                ) AS eventInfo
-            FROM    
-                product
-            WHERE
-                product.deleted_at IS NULL
-            ORDER BY
-                product.name
-            LIMIT $2 OFFSET $3
-            `,
-            [user.idx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]
-        );
 
         res.status(200).send({
-            data: products.rows,
+            data: await getProductAll(user, page),
             authStatus: req.isLogin,
         });
     })
