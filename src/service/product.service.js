@@ -1,11 +1,13 @@
 const CreateProductDto = require("../dto/CreateProductDto");
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx } = require("../repository/productRepository");
+const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch } = require("../repository/productRepository");
 const { NotFoundException, BadRequestException } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
 const productEventWrapper = require("../modules/productEventWrapper");
+const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 const COMPANY_SIZE = 3;
+
 /**
  *
  * @param {req.user} user
@@ -101,7 +103,38 @@ const getProductsByCompanyIdx = async (user, companyIdx, page, option) => {
     if (!productsData) {
         throw new NotFoundException("Cannot find products");
     }
-    console.log(productsData);
+
     return await productEventWrapper(productsData);
 };
-module.exports = { getProductByIdx, getProductAll, getProductsByCompanyIdx };
+/**
+ *
+ * @param {req.user} user
+ * @param {string} keyword
+ * @param {Array<number>} eventFilter
+ * @param {Array<number>} categoryFilter
+ * @param {number} page
+ * @returns {Promise<Array<{
+ *          product:Product
+ *          events:EventHistory
+ *      }
+ * >}
+ */
+const getProductsBySearch = async (user, keyword, categoryFilter, eventFilter, page) => {
+    const pageSizeOption = 10;
+    if (!keywordPattern.test(keyword)) {
+        throw new BadRequestException("keyword 입력 오류");
+    }
+    if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
+        throw new BadRequestException("page 입력 오류");
+    }
+    if (!eventFilter) {
+        eventFilter = [1, 2, 3, 4, 5, 6];
+    }
+    if (!categoryFilter) {
+        categoryFilter = [1, 2, 3, 4, 5, 6];
+    }
+    const productsData = await getProductsDataBySearch(user.idx, keyword, categoryFilter, eventFilter, pageSizeOption, page);
+    ㄴ;
+    return await productEventWrapper(productsData);
+};
+module.exports = { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch };

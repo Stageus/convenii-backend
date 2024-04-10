@@ -10,10 +10,11 @@ const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 
-const { getProductByIdx, getProductAll, getProductsByCompanyIdx } = require("../service/product.service");
+const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch } = require("../service/product.service");
+const e = require("express");
 
 const COMPANY_SIZE = 3;
-const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
+
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
 //  GET/company/:companyIdx       => 회사별로 행사 정렬해서 가져오기
@@ -60,97 +61,11 @@ router.get(
     "/search",
     checkAuthStatus,
     wrapper(async (req, res, next) => {
-        let { keyword, eventFilter, categoryFilter, page } = req.query;
+        let { keyword, categoryFilter, eventFilter, page } = req.query;
         const user = req.user;
-        const pageSizeOption = 10;
-        if (!keywordPattern.test(keyword)) {
-            throw new BadRequestException("keyword 입력 오류");
-        }
-        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
-            throw new BadRequestException("page 입력 오류");
-        }
-        if (!eventFilter) {
-            eventFilter = [1, 2, 3, 4, 5, 6];
-        }
-        if (!categoryFilter) {
-            categoryFilter = [1, 2, 3, 4, 5, 6];
-        }
-        //검색어 필터링 sql
-        const sql = `
-            --해당 이벤트가 존재하는 product_idx 가져오기
-            WITH possilbe_product AS (
-                SELECT
-                    DISTINCT event_history.product_idx AS idx
-                FROM
-                    event_history
-                WHERE
-                    event_history.event_idx = ANY($4)
-                    AND
-                        event_history.start_date >= date_trunc('month', current_date)
-                    AND
-                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-            )
-            SELECT
-                product.idx,
-                product.category_idx,
-                product.name,
-                product.price,
-                product.image_url,
-                product.score,
-                product.created_at,
-                --북마크 여부
-                (
-                    SELECT
-                        bookmark.idx
-                    FROM
-                        bookmark
-                    WHERE
-                        account_idx = $1
-                    AND
-                        product_idx = product.idx
-                ) IS NOT NULL AS "bookmarked",
-                -- 이벤트 정보
-                ARRAY (
-                    SELECT
-                        json_build_object(
-                            'companyIdx', event_history.company_idx,
-                            'eventType', event_history.event_idx,
-                            'price', price
-                        )
-                    FROM
-                        event_history
-                    WHERE
-                        event_history.product_idx = product.idx
-                    AND
-                        event_history.start_date >= date_trunc('month', current_date)
-                    AND
-                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-                    ORDER BY
-                        event_history.company_idx
-                ) AS eventInfo
-            FROM    
-                product
-            LEFT JOIN
-                possilbe_product
-            ON
-                product.idx = possilbe_product.idx
-            WHERE
-                product.deleted_at IS NULL
-            AND
-                product.name LIKE $2
-            AND
-                product.category_idx = ANY($3)
-            AND
-                possilbe_product.idx IS NOT NULL
-            ORDER BY
-                product.name
-            LIMIT $5 OFFSET $6
-            `;
-
-        const products = await query(sql, [user.idx, "%" + keyword + "%", categoryFilter, eventFilter, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]);
 
         res.status(200).send({
-            data: products.rows,
+            data: await getProductsBySearch(user, keyword, categoryFilter, eventFilter, page),
             authStatus: req.isLogin,
         });
     })

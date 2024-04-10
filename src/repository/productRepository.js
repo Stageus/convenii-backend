@@ -124,7 +124,7 @@ const getEventHistoryData = async (productIdx) => {
  *      categoryIdx: number,
  *      name: string,
  *      price: string,
- *      imageUrl: string,
+ *      productImg: string,
  *      score: string,
  *      createdAt: Date,
  *      bookmarked: boolean,
@@ -189,6 +189,7 @@ const getProductsData = async (userIdx, page, pageSizeOption) => {
     );
     return products.rows;
 };
+
 /**
  *
  * @param {number} userIdx
@@ -202,7 +203,7 @@ const getProductsData = async (userIdx, page, pageSizeOption) => {
  *      categoryIdx: number,
  *      name: string,
  *      price: string,
- *      imageUrl: string,
+ *      productImg: string,
  *      score: string,
  *      createdAt: Date,
  *      bookmarked: boolean,
@@ -291,4 +292,116 @@ const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, 
     );
     return products.rows;
 };
-module.exports = { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx };
+
+/**
+ *
+ * @param {number} userIdx
+ * @param {string} keyword
+ * @param {Array<number>} categoryFilter
+ * @param {Array<number>} eventFilter
+ * @param {number} pageSizeOption
+ * @param {number} page
+ * @returns {Promise<Array<{
+ *      idx: number,
+ *      categoryIdx: number,
+ *      name: string,
+ *      price: string,
+ *      productImg: string,
+ *      score: string,
+ *      createdAt: Date,
+ *      bookmarked: boolean,
+ *      month: Date,
+ *      events: Array<{
+ *          companyIdx: number,
+ *          eventIdx: number,
+ *          price: string | null
+ *      }| null>
+ *   }>
+ * }
+ */
+const getProductsDataBySearch = async (userIdx, keyword, categoryFilter, eventFilter, pageSizeOption, page) => {
+    const products = await query(
+        `
+            --해당 이벤트가 존재하는 product_idx 가져오기
+            WITH possilbe_product AS (
+                SELECT
+                    DISTINCT event_history.product_idx AS idx
+                FROM
+                    event_history
+                WHERE
+                    event_history.event_idx = ANY($4)
+                    AND
+                        event_history.start_date >= date_trunc('month', current_date)
+                    AND
+                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+            )
+            SELECT
+                product.idx,
+                product.category_idx AS "categoryIdx",
+                product.name,
+                product.price,
+                product.image_url AS "productImg",
+                product.score,
+                product.created_at AS "createdAt",
+                --북마크 여부
+                (
+                    SELECT
+                        bookmark.idx
+                    FROM
+                        bookmark
+                    WHERE
+                        account_idx = $1
+                    AND
+                        product_idx = product.idx
+                ) IS NOT NULL AS "bookmarked",
+                -- 이벤트 정보
+                TO_CHAR(current_date, 'YYYY-MM') AS "month",
+                ARRAY (
+                    SELECT
+                        json_build_object(
+                            'companyIdx', event_history.company_idx,
+                            'eventIdx', event_history.event_idx,
+                            'price', price
+                        )
+                    FROM
+                        event_history
+                    WHERE
+                        event_history.product_idx = product.idx
+                    AND
+                        event_history.start_date >= date_trunc('month', current_date)
+                    AND
+                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                    ORDER BY
+                        event_history.company_idx
+                ) AS events
+            FROM    
+                product
+            LEFT JOIN
+                possilbe_product
+            ON
+                product.idx = possilbe_product.idx
+            WHERE
+                product.deleted_at IS NULL
+            AND
+                product.name LIKE $2
+            AND
+                product.category_idx = ANY($3)
+            AND
+                possilbe_product.idx IS NOT NULL
+            ORDER BY
+                product.name
+            LIMIT $5 OFFSET $6
+            `,
+        [userIdx, "%" + keyword + "%", categoryFilter, eventFilter, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]
+    );
+
+    return products.rows;
+};
+
+module.exports = {
+    getProductData,
+    getEventHistoryData,
+    getProductsData,
+    getProductsDataByCompanyIdx,
+    getProductsDataBySearch,
+};
