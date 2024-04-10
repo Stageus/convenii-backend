@@ -1,10 +1,11 @@
 const CreateProductDto = require("../dto/CreateProductDto");
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductData, getEventHistoryData, getProductsData } = require("../repository/productRepository");
-const { NotFoundException } = require("../modules/Exception");
+const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx } = require("../repository/productRepository");
+const { NotFoundException, BadRequestException } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
-
+const productEventWrapper = require("../modules/productEventWrapper");
+const COMPANY_SIZE = 3;
 /**
  *
  * @param {req.user} user
@@ -64,36 +65,43 @@ const getProductAll = async (user, page) => {
         throw new BadRequestException("Cannot find products");
     }
 
-    const data = [];
-
-    productsData.forEach((productDataSet) => {
-        const productData = {
-            idx: productDataSet.idx,
-            categoryIdx: productDataSet.categoryIdx,
-            name: productDataSet.name,
-            price: productDataSet.price,
-            productImg: productDataSet.productImg,
-            score: productDataSet.score,
-            createdAt: productDataSet.createdAt,
-            bookmarked: productDataSet.bookmarked,
-        };
-
-        const eventHistoryData = {
-            month: productDataSet.month,
-            events: productDataSet.events,
-        };
-        const productDto = new CreateProductDto(productData);
-        const product = productDto.createProduct();
-
-        const eventHistoryDto = new CreateEventHistoryDto(eventHistoryData);
-        const eventHistory = eventHistoryDto.createEventHistory();
-
-        data.push({
-            product,
-            eventHistory,
-        });
-    });
-
-    return data;
+    return await productEventWrapper(productsData);
 };
-module.exports = { getProductByIdx, getProductAll };
+
+/**
+ *
+ * @param {req.user} user
+ * @param {number} companyIdx
+ * @param {number} page
+ * @param {string} option
+ * @returns {Promise<Array<{
+ *          product:Product
+ *          events:EventHistory
+ *      }
+ * >}
+ */
+const getProductsByCompanyIdx = async (user, companyIdx, page, option) => {
+    let pageSizeOption = 10;
+    let offset = (parseInt(page) - 1) * pageSizeOption;
+    if (!companyIdx || isNaN(parseInt(companyIdx, 10)) || companyIdx <= 0 || companyIdx > COMPANY_SIZE) {
+        throw new BadRequestException("companyIdx 입력 오류");
+    }
+    if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
+        throw new BadRequestException("page 입력 오류");
+    }
+    if (option !== "main" && option !== "all") {
+        throw new BadRequestException("option 입력 오류");
+    }
+    if (option === "main") {
+        pageSizeOption = 3;
+        offset = 0;
+    }
+
+    const productsData = await getProductsDataByCompanyIdx(user.idx, companyIdx, pageSizeOption, offset, COMPANY_SIZE);
+    if (!productsData) {
+        throw new NotFoundException("Cannot find products");
+    }
+    console.log(productsData);
+    return await productEventWrapper(productsData);
+};
+module.exports = { getProductByIdx, getProductAll, getProductsByCompanyIdx };
