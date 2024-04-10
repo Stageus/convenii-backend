@@ -62,7 +62,7 @@ const getProductData = async (userIdx, productIdx) => {
  *          companyIdx: number,
  *          eventIdx: number,
  *          price: string | null
- *      }>
+ *      }| null>
  *     }>>
  *
  * }
