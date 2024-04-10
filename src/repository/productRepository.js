@@ -3,7 +3,7 @@ const Product = require("../entity/Product");
 const query = require("../modules/query");
 
 /**
- *
+ * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
  * @param {number} userIdx
  * @param {number} productIdx
  * @returns {Promise<{
@@ -12,10 +12,11 @@ const query = require("../modules/query");
  *  name: string;
  *  price: string;
  *  productImg: string;
- *  score: number;
+ *  score: string;
  *  createdAt: Date;
  *  bookmarked: boolean;
  * }>}
+ *
  */
 const getProductData = async (userIdx, productIdx) => {
     const productSelectResult = await query(
@@ -112,4 +113,80 @@ const getEventHistoryData = async (productIdx) => {
     return eventInfoSelectResult.rows;
 };
 
-module.exports = { getProductData, getEventHistoryData };
+/**
+ *
+ * @param {number} userIdx
+ * @param {number} page
+ * @param {number} pageSizeOption
+ *
+ * @returns {Promise<Array<{
+ *      idx: number,
+ *      categoryIdx: number,
+ *      name: string,
+ *      price: string,
+ *      imageUrl: string,
+ *      score: string,
+ *      createdAt: Date,
+ *      bookmarked: boolean,
+ *      month: Date,
+ *      events: Array<{
+ *          companyIdx: number,
+ *          eventIdx: number,
+ *          price: string | null
+ *      }| null>
+ *   }>
+ * }
+ */
+const getProductsData = async (userIdx, page, pageSizeOption) => {
+    const products = await query(
+        `
+            SELECT
+                product.idx,
+                product.category_idx AS "categoryIdx",
+                product.name,
+                product.price,
+                product.image_url AS "productImg",
+                product.score,
+                product.created_at AS "createdAt",
+                (
+                    SELECT
+                        bookmark.idx
+                    FROM
+                        bookmark
+                    WHERE
+                        account_idx = $1
+                    AND
+                        product_idx = product.idx
+                ) IS NOT NULL AS "bookmarked",
+                TO_CHAR(current_date, 'YYYY-MM') AS "month",
+                ARRAY (
+                    SELECT
+                        json_build_object(
+                            'companyIdx', event_history.company_idx,
+                            'eventType', event_history.event_idx,
+                            'price', price
+                        )
+                    FROM
+                        event_history
+                    WHERE
+                        event_history.product_idx = product.idx
+                    AND
+                        event_history.start_date >= date_trunc('month', current_date)
+                    AND
+                        event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                    ORDER BY
+                        event_history.company_idx
+                ) AS events
+            FROM    
+                product
+            WHERE
+                product.deleted_at IS NULL
+            ORDER BY
+                product.name
+            LIMIT $2 OFFSET $3
+            `,
+        [userIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]
+    );
+    return products.rows;
+};
+module.exports = { getProductData, getEventHistoryData, getProductsData };
