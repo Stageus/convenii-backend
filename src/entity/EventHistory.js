@@ -27,14 +27,7 @@ class EventHistory {
      */
     constructor(data) {
         this.month = data.month;
-        this.events = data.events.map(
-            (eventData) =>
-                new Event({
-                    companyIdx: eventData.companyIdx,
-                    eventIdx: eventData.eventIdx,
-                    price: eventData.price,
-                })
-        );
+        this.events = data.events;
     }
 }
 
