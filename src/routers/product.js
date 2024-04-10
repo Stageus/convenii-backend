@@ -10,6 +10,8 @@ const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 
+const { getProductByIdx } = require("../service/product.service");
+
 const COMPANY_SIZE = 3;
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 /////////////---------------product---------/////////////////////
@@ -302,90 +304,8 @@ router.get(
         const { productIdx } = req.params;
         const user = req.user;
 
-        const product = await query(
-            `
-            SELECT
-                product.idx,
-                product.category_idx,
-                product.name,
-                product.price,
-                product.image_url,
-                product.score,
-                product.created_at,
-                (
-                    SELECT
-                        bookmark.idx
-                    FROM
-                        bookmark
-                    WHERE
-                        account_idx = $1
-                    AND
-                        product_idx = product.idx
-                ) IS NOT NULL AS "bookmarked"
-            FROM    
-                product
-            WHERE
-                product.deleted_at IS NULL
-            AND
-                product.idx = $2
-            `,
-            [user.idx, productIdx]
-        );
-
-        const eventInfo = await query(
-            `
-             WITH month_array AS (
-                SELECT to_char(date_trunc('month', current_date) - interval '1 month' * series, 'YYYY-MM') AS month
-                FROM generate_series(0, 9) AS series
-            ),
-            event_array AS (
-                SELECT
-                    json_build_object(
-                        'companyIdx', event_history.company_idx,
-                        'eventType', event_history.event_idx,
-                        'price', event_history.price
-                    ) AS event_info,
-                    to_char(event_history.start_date, 'YYYY-MM') AS event_month
-                FROM
-                    event_history
-                WHERE
-                    event_history.product_idx = $1
-                    AND event_history.start_date >= (date_trunc('month', current_date) - interval '9 months')
-            ),
-            merge_events AS (
-                SELECT
-                    month_array.month,
-                    json_agg(event_array.event_info) FILTER (WHERE event_array.event_info IS NOT NULL) AS events
-                FROM
-                    month_array
-                LEFT JOIN
-                    event_array ON month_array.month = event_array.event_month
-                GROUP BY
-                    month_array.month
-                ORDER BY
-                    month_array.month DESC
-            )
-            SELECT 
-                month,
-                events
-            FROM 
-                merge_events       
-            `,
-            [productIdx]
-        );
-
-        if (product.rows.length == 0) {
-            throw new BadRequestException("올바르지 않은 productIdx: idx가 없음");
-        }
-        if (eventInfo.rows.length == 0) {
-            throw new BadRequestException("올바르지 않은 productIdx: eventInfo가 없음");
-        }
-
         res.status(200).send({
-            data: {
-                product: product.rows[0],
-                history: eventInfo.rows,
-            },
+            data: await getProductByIdx(user, productIdx),
             authStatus: req.isLogin,
         });
     })
