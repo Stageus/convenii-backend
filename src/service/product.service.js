@@ -1,7 +1,7 @@
 const CreateProductDto = require("../dto/CreateProductDto");
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
 const { getProductData, getEventHistoryData } = require("../repository/productRepository");
-
+const { NotFoundException } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
 
@@ -19,7 +19,7 @@ const getProductByIdx = async (user, productIdx) => {
     if (!productData) {
         throw new NotFoundException("Cannot find product");
     }
-    console.log(productData);
+
     const productDto = new CreateProductDto(productData);
     const product = productDto.createProduct();
 
@@ -27,9 +27,11 @@ const getProductByIdx = async (user, productIdx) => {
     if (!eventHistoryData) {
         throw new NotFoundException("Cannot find product's eventHistory ");
     }
-
-    const eventHistoryDto = new CreateEventHistoryDto(eventHistoryData);
-    const eventHistory = eventHistoryDto.createEventHistory();
+    const eventHistory = [];
+    eventHistoryData.forEach((data) => {
+        const eventHistoryDto = new CreateEventHistoryDto(data);
+        eventHistory.push(eventHistoryDto.createEventHistory());
+    });
 
     return {
         product,
