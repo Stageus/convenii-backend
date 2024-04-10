@@ -1,6 +1,7 @@
 const Account = require("../entity/Account");
 const Product = require("../entity/Product");
 const query = require("../modules/query");
+const pgPool = require("../modules/pgPool");
 
 /**
  * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
@@ -397,11 +398,59 @@ const getProductsDataBySearch = async (userIdx, keyword, categoryFilter, eventFi
 
     return products.rows;
 };
-
+/**
+ *
+ * @param {number} categoryIdx
+ * @param {string} name
+ * @param {number} price
+ * @param {string} imageUrl
+ * @param {Array<number>} companyIdxArray
+ * @param {Array<number>} eventIdxArray
+ * @param {Array<number|null>} eventPriceArray
+ * @returns {boolean}
+ */
+const postProductData = async (categoryIdx, name, price, imageUrl, companyIdxArray, eventIdxArray, eventPriceArray) => {
+    const client = await pgPool.connect();
+    let postSuccess = true;
+    try {
+        const newProduct = await query(
+            `
+            INSERT INTO product (category_idx, name, price, image_url)
+            VALUES (
+                $1,
+                $2,
+                $3,
+                $4
+            )
+            RETURNING idx
+        `,
+            [categoryIdx, name, price, imageUrl],
+            client
+        );
+        const newProductIdx = newProduct.rows[0].idx;
+        await query(
+            `
+            INSERT INTO event_history
+                (start_date, product_idx, company_idx, event_idx, price )
+            VALUES
+                (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
+        `,
+            [newProductIdx, companyIdxArray, eventIdxArray, eventPriceArray],
+            client
+        );
+    } catch (err) {
+        await client.query("ROLLBACK");
+        postSuccess = false;
+    } finally {
+        await client.release();
+        return postSuccess;
+    }
+};
 module.exports = {
     getProductData,
     getEventHistoryData,
     getProductsData,
     getProductsDataByCompanyIdx,
     getProductsDataBySearch,
+    postProductData,
 };
