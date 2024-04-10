@@ -10,7 +10,7 @@ const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 
-const { getProductByIdx, getProductAll } = require("../service/product.service");
+const { getProductByIdx, getProductAll, getProductsByCompanyIdx } = require("../service/product.service");
 
 const COMPANY_SIZE = 3;
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
@@ -47,96 +47,9 @@ router.get(
         const { companyIdx } = req.params;
         const { page, option } = req.query;
         const user = req.user;
-        let pageSizeOption = 10;
-        let offset = (parseInt(page) - 1) * pageSizeOption;
-        if (!companyIdx || isNaN(parseInt(companyIdx, 10)) || companyIdx <= 0 || companyIdx > COMPANY_SIZE) {
-            throw new BadRequestException("companyIdx 입력 오류");
-        }
-        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
-            throw new BadRequestException("page 입력 오류");
-        }
-        if (option !== "main" && option !== "all") {
-            throw new BadRequestException("option 입력 오류");
-        }
-        if (option === "main") {
-            pageSizeOption = 3;
-            offset = 0;
-        }
 
-        const products = await query(
-            `
-            WITH productInfo AS (
-                SELECT
-                    product.idx,
-                    product.category_idx,
-                    product.name,
-                    product.price,
-                    product.image_url,
-                    product.score,
-                    product.created_at,
-                    (
-                        SELECT
-                            bookmark.idx
-                        FROM
-                            bookmark
-                        WHERE
-                            account_idx = $1
-                        AND
-                            product_idx = product.idx
-                    ) IS NOT NULL AS "bookmarked",
-                    ARRAY (
-                        SELECT
-                            json_build_object(
-                                'companyIdx', event_history.company_idx,
-                                'eventType', event_history.event_idx,
-                                'price', price
-                            )
-                        FROM
-                            event_history
-                        WHERE
-                            event_history.product_idx = product.idx
-                        AND
-                            event_history.start_date >= date_trunc('month', current_date)
-                        AND
-                            event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-                        ORDER BY
-                            event_history.company_idx
-                    ) AS eventInfo,
-                    (
-                        SELECT
-                            SUM(
-                            CASE
-                                    WHEN event_history.company_idx = $2 THEN event.priority * ${COMPANY_SIZE - 1}
-                                    ELSE -event.priority
-                                END
-                            )   
-                        FROM
-                            event_history
-                        JOIN 
-                            event ON event_history.event_idx = event.idx
-                        WHERE          
-                            event_history.product_idx = product.idx 
-                        AND
-                            event_history.start_date >= date_trunc('month', current_date)
-                        AND
-                            event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-                        GROUP BY
-                            event_history.product_idx
-                    ) AS priorityScore
-                FROM    
-                    product
-                WHERE
-                    product.deleted_at IS NULL
-            )
-            SELECT * FROM productInfo
-            WHERE priorityScore >= 0
-            ORDER BY priorityScore DESC, name
-            LIMIT $3 OFFSET $4;
-            `,
-            [user.idx, companyIdx, pageSizeOption, offset]
-        );
         res.status(200).send({
-            data: products.rows,
+            data: await getProductsByCompanyIdx(user, companyIdx, page, option),
             authStatus: req.isLogin,
         });
     })
