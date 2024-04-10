@@ -30,10 +30,17 @@ class UnauthorizedException extends Exception {
         super(401, message);
     }
 }
+
+class ServerError extends Exception {
+    constructor(message) {
+        super(500, message);
+    }
+}
 module.exports = {
     Exception,
     NotFoundException,
     BadRequestException,
     ForbiddenException,
     UnauthorizedException,
+    ServerError,
 };
