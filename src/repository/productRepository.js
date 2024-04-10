@@ -221,12 +221,12 @@ const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, 
             WITH productInfo AS (
                 SELECT
                     product.idx,
-                    product.category_idx,
+                    product.category_idx AS "categoryIdx",
                     product.name,
                     product.price,
-                    product.image_url,
+                    product.image_url AS "productImg",
                     product.score,
-                    product.created_at,
+                    product.created_at AS "createdAt",
                     (
                         SELECT
                             bookmark.idx
@@ -237,11 +237,12 @@ const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, 
                         AND
                             product_idx = product.idx
                     ) IS NOT NULL AS "bookmarked",
+                    TO_CHAR(current_date, 'YYYY-MM') AS "month",
                     ARRAY (
                         SELECT
                             json_build_object(
                                 'companyIdx', event_history.company_idx,
-                                'eventType', event_history.event_idx,
+                                'eventIdx', event_history.event_idx,
                                 'price', price
                             )
                         FROM
@@ -254,7 +255,7 @@ const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, 
                             event_history.start_date < date_trunc('month', current_date) + interval '1 month'
                         ORDER BY
                             event_history.company_idx
-                    ) AS eventInfo,
+                    ) AS events,
                     (
                         SELECT
                             SUM(
@@ -288,6 +289,6 @@ const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, 
             `,
         [userIdx, companyIdx, pageSizeOption, offset, companySize - 1]
     );
-    return products;
+    return products.rows;
 };
 module.exports = { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx };
