@@ -1,13 +1,14 @@
 const CreateProductDto = require("../dto/CreateProductDto");
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch } = require("../repository/productRepository");
-const { NotFoundException, BadRequestException } = require("../modules/Exception");
+const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData } = require("../repository/productRepository");
+const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
 const productEventWrapper = require("../modules/productEventWrapper");
+const e = require("express");
+
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 const COMPANY_SIZE = 3;
-
 /**
  *
  * @param {req.user} user
@@ -134,7 +135,50 @@ const getProductsBySearch = async (user, keyword, categoryFilter, eventFilter, p
         categoryFilter = [1, 2, 3, 4, 5, 6];
     }
     const productsData = await getProductsDataBySearch(user.idx, keyword, categoryFilter, eventFilter, pageSizeOption, page);
-    ㄴ;
+
     return await productEventWrapper(productsData);
 };
-module.exports = { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch };
+
+/**
+ *
+ * @param {number} categoryIdx
+ * @param {string} name
+ * @param {string} price
+ * @param {Array} eventInfo
+ * @param {req.file} file
+ * @returns {Promise<void>}
+ */
+const postProduct = async (categoryIdx, name, price, eventInfo, file) => {
+    const companyIdxArray = [];
+    const eventIdxArray = [];
+    const eventPriceArray = [];
+    if (typeof categoryIdx !== "string" || parseInt(categoryIdx) < 0) {
+        throw new BadRequestException("categoryIdx 오류");
+    }
+    if (typeof name !== "string" || name.trim().length === 0) {
+        throw new BadRequestException("name 오류");
+    }
+    if (typeof price !== "string" || parseInt(price) <= 0) {
+        throw new BadRequestException("price 오류");
+    }
+    if (eventInfo.length === 0) {
+        throw new BadRequestException("eventInfo 오류");
+    }
+    eventInfo.forEach((event) => {
+        //companyIdx가 없으면 넣지 않는다
+        if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
+            companyIdxArray.push(event.companyIdx);
+            eventIdxArray.push(event.eventIdx);
+            if (!event.eventPrice) {
+                event.eventPrice = null;
+            }
+            eventPriceArray.push(event.eventPrice);
+        }
+    });
+    const postSuccess = await postProductData(categoryIdx, name, price, file.location, companyIdxArray, eventIdxArray, eventPriceArray);
+    if (!postSuccess) {
+        throw new ServerError("unexpected error occur");
+    }
+    return;
+};
+module.exports = { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct };
