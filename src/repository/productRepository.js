@@ -189,4 +189,105 @@ const getProductsData = async (userIdx, page, pageSizeOption) => {
     );
     return products.rows;
 };
-module.exports = { getProductData, getEventHistoryData, getProductsData };
+/**
+ *
+ * @param {number} userIdx
+ * @param {number} companyIdx
+ * @param {number} pageSizeOption
+ * @param {number} offset
+ * @param {number} companySize
+ *
+ * @returns {Promise<Array<{
+ *      idx: number,
+ *      categoryIdx: number,
+ *      name: string,
+ *      price: string,
+ *      imageUrl: string,
+ *      score: string,
+ *      createdAt: Date,
+ *      bookmarked: boolean,
+ *      month: Date,
+ *      events: Array<{
+ *          companyIdx: number,
+ *          eventIdx: number,
+ *          price: string | null
+ *      }| null>
+ *   }>
+ * }
+ */
+const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, offset, companySize) => {
+    const products = await query(
+        `
+            WITH productInfo AS (
+                SELECT
+                    product.idx,
+                    product.category_idx,
+                    product.name,
+                    product.price,
+                    product.image_url,
+                    product.score,
+                    product.created_at,
+                    (
+                        SELECT
+                            bookmark.idx
+                        FROM
+                            bookmark
+                        WHERE
+                            account_idx = $1
+                        AND
+                            product_idx = product.idx
+                    ) IS NOT NULL AS "bookmarked",
+                    ARRAY (
+                        SELECT
+                            json_build_object(
+                                'companyIdx', event_history.company_idx,
+                                'eventType', event_history.event_idx,
+                                'price', price
+                            )
+                        FROM
+                            event_history
+                        WHERE
+                            event_history.product_idx = product.idx
+                        AND
+                            event_history.start_date >= date_trunc('month', current_date)
+                        AND
+                            event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                        ORDER BY
+                            event_history.company_idx
+                    ) AS eventInfo,
+                    (
+                        SELECT
+                            SUM(
+                            CASE
+                                    WHEN event_history.company_idx = $2 THEN event.priority * $5
+                                    ELSE -event.priority
+                                END
+                            )   
+                        FROM
+                            event_history
+                        JOIN 
+                            event ON event_history.event_idx = event.idx
+                        WHERE          
+                            event_history.product_idx = product.idx 
+                        AND
+                            event_history.start_date >= date_trunc('month', current_date)
+                        AND
+                            event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                        GROUP BY
+                            event_history.product_idx
+                    ) AS priorityScore
+                FROM    
+                    product
+                WHERE
+                    product.deleted_at IS NULL
+            )
+            SELECT * FROM productInfo
+            WHERE priorityScore >= 0
+            ORDER BY priorityScore DESC, name
+            LIMIT $3 OFFSET $4;
+            `,
+        [userIdx, companyIdx, pageSizeOption, offset, companySize - 1]
+    );
+    return products;
+};
+module.exports = { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx };
