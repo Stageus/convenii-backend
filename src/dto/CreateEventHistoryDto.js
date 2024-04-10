@@ -1,7 +1,6 @@
 const EventHistory = require("../entity/EventHistory");
 const { BadRequestException } = require("../modules/Exception");
-const CreateEventDto = require("./CreateEventDto");
-// const Event = require("../entity/Event");
+
 class CreateEventHistoryDto {
     /**
      * @type {Date}
