@@ -6,7 +6,9 @@ const adminAuth = require("../middlewares/adminAuth");
 const checkAuthStatus = require("../middlewares/checkAuthStatus");
 const uploadImg = require("../middlewares/uploadImg");
 const wrapper = require("../modules/wrapper");
-const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct, deleteProduct } = require("../service/product.service");
+const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct, deleteProduct, getProductsWithEvents } = require("../service/product.service");
+const patternTest = require("../modules/patternTest");
+const { getProductsWithEventsData } = require("../repository/productRepository");
 
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
@@ -25,9 +27,12 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
         const { page } = req.query;
+        if (!page || !patternTest("page", page)) {
+            throw new BadRequestException("page 입력 오류");
+        }
 
         res.status(200).send({
-            data: await getProductAll(user, page),
+            data: await getProductsWithEvents(user, page),
             authStatus: user.isLogin,
         });
     })

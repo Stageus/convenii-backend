@@ -1,5 +1,5 @@
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductDataByIdx, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData } = require("../repository/productRepository");
+const { getProductDataByIdx, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData, getProductsWithEventsData } = require("../repository/productRepository");
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
@@ -13,6 +13,8 @@ const EventHistoryBO = require("../bo/EventHistoryBO");
 const ProductResponseDto = require("../dto/productDto/ProductResponseDto");
 const EventHistoryResponseDto = require("../dto/eventDto/EventHistoryResponseDto");
 const Account = require("../entity/Account");
+const ProductsWithEventsBO = require("../bo/ProductsWithEventsBO");
+const ProductWithEventsResponseDto = require("../dto/productDto/ProductsWithEventsResponseDto");
 
 const COMPANY_SIZE = 3;
 /**
@@ -31,7 +33,6 @@ const getProductByIdx = async (user, productIdx) => {
 
     // eventHistoryData
     const eventHistoryData = await getEventHistoryData(productIdx);
-    console.log(eventHistoryData);
     const eventHistoryBO = new EventHistoryBO(eventHistoryData);
 
     return {
@@ -50,14 +51,13 @@ const getProductByIdx = async (user, productIdx) => {
  *      }
  * >}
  */
-const getProductAll = async (user, page) => {
+const getProductsWithEvents = async (user, page) => {
     const pageSizeOption = 10;
-    const productsData = await getProductsData(user.idx, page, pageSizeOption);
-    if (!productsData) {
-        throw new BadRequestException("Cannot find products");
-    }
+    const productsWithEventsData = await getProductsWithEventsData(user.idx, page, pageSizeOption);
+    const productsWithEventsBO = new ProductsWithEventsBO(productsWithEventsData);
 
-    return await productEventWrapper(productsData);
+    return new ProductWithEventsResponseDto(productsWithEventsBO);
+    //return await productEventWrapper(productsData);
 };
 
 /**
@@ -250,7 +250,7 @@ const deleteProduct = async (productIdx) => {
 };
 module.exports = {
     getProductByIdx,
-    getProductAll,
+    getProductsWithEvents,
     getProductsByCompanyIdx,
     getProductsBySearch,
     postProduct,

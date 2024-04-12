@@ -55,22 +55,7 @@ const getProductDataByIdx = async (userIdx, productIdx, conn = pgPool) => {
  * @param {number} pageSizeOption
  * @param {pg.PoolClient} conn
  *
- * @returns {Promise<Array<{
- *      idx: number,
- *      categoryIdx: number,
- *      name: string,
- *      price: string,
- *      productImg: string,
- *      score: string,
- *      createdAt: Date,
- *      bookmarked: boolean,
- *      month: Date,
- *      events: Array<{
- *          companyIdx: number,
- *          eventIdx: number,
- *          price: string | null
- *      }| null>
- *   }>
+ * @returns {Promise<ProductsWithEventsDataDto>
  * }
  */
 const getProductsWithEventsData = async (userIdx, page, pageSizeOption, conn = pgPool) => {

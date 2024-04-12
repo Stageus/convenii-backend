@@ -1,6 +1,6 @@
-const Event = require("../../entity/Event");
+const Event = require("../entity/Event");
 
-class ProductsWithEventsDataDto {
+class ProductsWithEventsBO {
     /**
      *
      * @type {Array<
@@ -28,7 +28,7 @@ class ProductsWithEventsDataDto {
      * } data
      */
     constructor(data) {
-        this.productsWithEvents = data.map((item) => ({
+        this.productsWithEvents = data.productsWithEvents.map((item) => ({
             idx: item.idx,
             categoryIdx: item.category_idx,
             price: item.price,
@@ -45,4 +45,4 @@ class ProductsWithEventsDataDto {
     }
 }
 
-module.exports = ProductsWithEventsDataDto;
+module.exports = ProductsWithEventsBO;
