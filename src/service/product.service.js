@@ -5,17 +5,10 @@ const { NotFoundException, BadRequestException, ServerError } = require("../modu
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
 const productEventWrapper = require("../modules/productEventWrapper");
-const e = require("express");
+
 const pgPool = require("../modules/pgPool");
 const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx } = require("../repository/eventRepository");
 const patternTest = require("../modules/patternTest");
-
-class LoginUser {
-    /**
-     * @type {number}
-     */
-    idx;
-}
 
 const COMPANY_SIZE = 3;
 /**
@@ -30,11 +23,7 @@ const COMPANY_SIZE = 3;
 const getProductByIdx = async (user, productIdx) => {
     //productData
     const productData = await getProductData(user.idx, productIdx);
-    if (!productData) {
-        throw new NotFoundException("Cannot find product");
-    }
-
-    const productDto = new CreateProductDto(productData);
+    const ProductBO
     const product = productDto.createProduct();
 
     // eventHistoryData
