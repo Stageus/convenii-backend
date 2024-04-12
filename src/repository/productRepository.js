@@ -7,27 +7,26 @@ const pgPool = require("../modules/pgPool");
  * @param {number} productIdx
  * @returns {Promise<{
  *  idx: number;
- *  categoryIdx: number;
+ *  category_idx: number;
  *  name: string;
  *  price: string;
- *  productImg: string;
+ *  image_url: string;
  *  score: string;
  *  createdAt: Date;
  *  bookmarked: boolean;
  * }>}
  *
  */
-const getProductData = async (userIdx, productIdx) => {
+const getProductData = async (userIdx, productIdx, conn = pgPool) => {
     const productSelectResult = await query(
         `SELECT
             product.idx,
-            product.category_idx AS "categoryIdx",
-            category.name AS "categoryName",
+            product.category_idx,
             product.name,
             product.price,
-            product.image_url AS "productImg",
+            product.image_url,
             product.score,
-            product.created_at AS "createdAt",
+            product.created_at,
             (
                 SELECT
                     bookmark.idx
@@ -40,16 +39,14 @@ const getProductData = async (userIdx, productIdx) => {
             ) IS NOT NULL AS "bookmarked"
         FROM    
             product
-        JOIN
-            category
-        ON
-            product.category_idx = category.idx
         WHERE
             product.deleted_at IS NULL
         AND
             product.idx = $2`,
-        [userIdx, productIdx]
+        [userIdx, productIdx],
+        conn
     );
+    console.log(typeof productSelectResult.rows[0].score);
     return productSelectResult.rows[0];
 };
 
@@ -67,10 +64,10 @@ const getProductData = async (userIdx, productIdx) => {
  *
  * }
  */
-const getEventHistoryData = async (productIdx) => {
+const getEventHistoryData = async (productIdx, conn = pgPool) => {
     const eventInfoSelectResult = await query(
         `
-                WITH month_array AS (
+            WITH month_array AS (
                 SELECT to_char(date_trunc('month', current_date) - interval '1 month' * series, 'YYYY-MM') AS month
                 FROM generate_series(0, 9) AS series
             ),
@@ -107,7 +104,8 @@ const getEventHistoryData = async (productIdx) => {
             FROM 
                 merge_events       
             `,
-        [productIdx]
+        [productIdx],
+        conn
     );
     return eventInfoSelectResult.rows;
 };
