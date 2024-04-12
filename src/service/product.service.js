@@ -8,8 +8,8 @@ const productEventWrapper = require("../modules/productEventWrapper");
 const e = require("express");
 const pgPool = require("../modules/pgPool");
 const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx } = require("../repository/eventRepository");
+const patternTest = require("../modules/patternTest");
 
-const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 const COMPANY_SIZE = 3;
 /**
  *
@@ -124,7 +124,7 @@ const getProductsByCompanyIdx = async (user, companyIdx, page, option) => {
  */
 const getProductsBySearch = async (user, keyword, categoryFilter, eventFilter, page) => {
     const pageSizeOption = 10;
-    if (!keywordPattern.test(keyword)) {
+    if (!patternTest("keyword", keyword)) {
         throw new BadRequestException("keyword 입력 오류");
     }
     if (!page || isNaN(parseInt(page, 10)) || page <= 0) {

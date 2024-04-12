@@ -1,5 +1,6 @@
 const EventHistory = require("../entity/EventHistory");
 const { BadRequestException } = require("../modules/Exception");
+const patternTest = require("../modules/patternTest");
 
 class CreateEventHistoryDto {
     /**
@@ -34,9 +35,7 @@ class CreateEventHistoryDto {
     }
 
     validate() {
-        const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
-
-        if (!monthRegex.test(this.month)) {
+        if (patternTest("month", month)) {
             throw new BadRequestException("month error");
         }
     }

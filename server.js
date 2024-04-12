@@ -12,7 +12,7 @@ const morganLogger = require("./src/middlewares/morganLogger");
 //config-------------------------------------------------//
 
 const { HTTP_PORT, HTTPS_PORT } = require("./src/config/portConfig");
-const httpConfig = require("./src/config/httpsConfig");
+//const httpsConfig = require("./src/config/httpsConfig");
 const { Exception } = require("./src/modules/Exception");
 
 //middleWare--------------------------------------------//

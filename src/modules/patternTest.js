@@ -1,4 +1,5 @@
 const patterns = {
+    idx: /^[1-9]\d*$/,
     email: /^[a-zA-Z0-9]{6,40}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
     pw: /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,20}$/,
     month: /^\d{4}-(0[1-9]|1[0-2])$/,
@@ -12,7 +13,19 @@ const patterns = {
 };
 /**
  *
- * @param {string} dataName
+ *
+ *
+ * @param {'idx' |
+ *  'email' |
+ * 'pw' |
+ * 'month' |
+ * 'nickname' |
+ * 'score' |
+ * 'content' |
+ * 'page' |
+ * 'name' |
+ * 'price' |
+ * 'keyword'} dataName
  * @param {any} data
  * @returns {boolean}
  */
