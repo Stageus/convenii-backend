@@ -5,6 +5,7 @@ class ProductsWithEventsDataDto {
      *
      * @type {Array<
      *  idx:number,
+     *  name: string,
      *  categoryIdx: number,
      *  price: string,
      *  score: string,
@@ -19,6 +20,7 @@ class ProductsWithEventsDataDto {
      *
      * @param {Array<
      *  idx:number,
+     *  name:string,
      *  categoryIdx: number,
      *  price: string,
      *  score: string,
@@ -30,6 +32,7 @@ class ProductsWithEventsDataDto {
     constructor(data) {
         this.productsWithEvents = data.map((item) => ({
             idx: item.idx,
+            name: item.name,
             categoryIdx: item.category_idx,
             price: item.price,
             score: item.score,
