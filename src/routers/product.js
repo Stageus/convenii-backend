@@ -1,19 +1,12 @@
 const router = require("express").Router();
 
-const pgPool = require("../modules/pgPool");
 const checkCondition = require("../middlewares/checkCondition");
 const loginAuth = require("../middlewares/loginAuth");
 const adminAuth = require("../middlewares/adminAuth");
 const checkAuthStatus = require("../middlewares/checkAuthStatus");
 const uploadImg = require("../middlewares/uploadImg");
 const wrapper = require("../modules/wrapper");
-const query = require("../modules/query");
-const { Exception, NotFoundException, BadRequestException, ForbiddenException, ServerError } = require("../modules/Exception");
-
 const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct, deleteProduct } = require("../service/product.service");
-const e = require("express");
-
-const COMPANY_SIZE = 3;
 
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
