@@ -22,6 +22,15 @@ const deleteCurrentMonthEventsByProductIdx = async (productIdx, conn) => {
     );
 };
 
+/**
+ *
+ * @param {number} productIdx
+ * @param {Array<number>} companyIdxArray
+ * @param {Array<number>} eventIdxArray
+ * @param {Array<string>} eventPriceArray
+ * @param {PoolClient} conn
+ * @returns {Promise<QueryResult>}
+ */
 const insertEventsByProductIdx = async (productIdx, companyIdxArray, eventIdxArray, eventPriceArray, conn) => {
     return await query(
         `

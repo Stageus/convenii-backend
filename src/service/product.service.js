@@ -1,11 +1,13 @@
 const CreateProductDto = require("../dto/CreateProductDto");
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData } = require("../repository/productRepository");
+const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData } = require("../repository/productRepository");
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
 const productEventWrapper = require("../modules/productEventWrapper");
 const e = require("express");
+const pgPool = require("../modules/pgPool");
+const { postEventsByProductIdx } = require("../repository/eventRepository");
 
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 const COMPANY_SIZE = 3;
@@ -175,10 +177,19 @@ const postProduct = async (categoryIdx, name, price, eventInfo, file) => {
             eventPriceArray.push(event.eventPrice);
         }
     });
-
-    if (!(await postProductData(categoryIdx, name, price, file, companyIdxArray, eventIdxArray, eventPriceArray))) {
+    const client = await pgPool.connect();
+    try {
+        await client.query("BEGIN");
+        const newProductIdx = await postProductData(categoryIdx, name, price, file, client);
+        await postEventsByProductIdx(newProductIdx, companyIdxArray, eventIdxArray, eventPriceArray, client);
+        await client.query("COMMIT");
+    } catch (err) {
+        client.query("ROLLBACK");
         throw new ServerError("unexpected error occur");
+    } finally {
+        client.release();
     }
+
     return;
 };
 
@@ -228,4 +239,22 @@ const putProduct = async (productIdx, categoryIdx, name, price, eventInfo, file)
     }
     return;
 };
-module.exports = { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct };
+
+/**
+ *
+ * @param {number} productIdx
+ * @returns {Promise<boolean>}
+ */
+const deleteProduct = async (productIdx) => {
+    await deleteProductData(productIdx);
+    return;
+};
+module.exports = {
+    getProductByIdx,
+    getProductAll,
+    getProductsByCompanyIdx,
+    getProductsBySearch,
+    postProduct,
+    putProduct,
+    deleteProduct,
+};

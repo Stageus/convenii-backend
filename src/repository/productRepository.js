@@ -1,5 +1,3 @@
-const Account = require("../entity/Account");
-const Product = require("../entity/Product");
 const query = require("../modules/query");
 const pgPool = require("../modules/pgPool");
 
@@ -398,25 +396,19 @@ const getProductsDataBySearch = async (userIdx, keyword, categoryFilter, eventFi
 
     return products.rows;
 };
+
 /**
  *
  * @param {number} categoryIdx
  * @param {string} name
- * @param {number} price
+ * @param {string} price
  * @param {req.file} file
- * @param {Array<number>} companyIdxArray
- * @param {Array<number>} eventIdxArray
- * @param {Array<number|null>} eventPriceArray
- * @returns {Promise<boolean>}
+ * @param {PoolClient} conn
+ * @returns {Promise<number>}
  */
-const postProductData = async (categoryIdx, name, price, file, companyIdxArray, eventIdxArray, eventPriceArray) => {
-    const client = await pgPool.connect();
-    let postSuccess = true;
-    const imageUrl = file.location;
-    try {
-        await client.query("BEGIN");
-        const newProduct = await query(
-            `
+const postProductData = async (categoryIdx, name, price, file, conn) => {
+    const product = await query(
+        `
             INSERT INTO product (category_idx, name, price, image_url)
             VALUES (
                 $1,
@@ -426,28 +418,11 @@ const postProductData = async (categoryIdx, name, price, file, companyIdxArray, 
             )
             RETURNING idx
         `,
-            [categoryIdx, name, price, imageUrl],
-            client
-        );
-        const newProductIdx = newProduct.rows[0].idx;
-        await query(
-            `
-            INSERT INTO event_history
-                (start_date, product_idx, company_idx, event_idx, price )
-            VALUES
-                (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
-        `,
-            [newProductIdx, companyIdxArray, eventIdxArray, eventPriceArray],
-            client
-        );
-        await client.query("COMMIT");
-    } catch (err) {
-        await client.query("ROLLBACK");
-        postSuccess = false;
-    } finally {
-        client.release();
-        return postSuccess;
-    }
+        [categoryIdx, name, price, file.location],
+        conn
+    );
+
+    return product.rows[0].idx;
 };
 
 /**
@@ -545,6 +520,20 @@ const putProductData = async (productIdx, categoryIdx, name, price, file, compan
     }
 };
 
+const deleteProductData = async (productIdx) => {
+    await query(
+        `
+            UPDATE
+                product
+            SET
+                deleted_at = current_date
+            WHERE
+                idx = $1
+            `,
+        [productIdx]
+    );
+    return;
+};
 module.exports = {
     getProductData,
     getEventHistoryData,
@@ -554,4 +543,5 @@ module.exports = {
     postProductData,
     checkProductExistByIdx,
     putProductData,
+    deleteProductData,
 };

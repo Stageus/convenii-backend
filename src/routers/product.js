@@ -10,7 +10,7 @@ const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
 const { Exception, NotFoundException, BadRequestException, ForbiddenException, ServerError } = require("../modules/Exception");
 
-const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct } = require("../service/product.service");
+const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct, deleteProduct } = require("../service/product.service");
 const e = require("express");
 
 const COMPANY_SIZE = 3;
@@ -110,91 +110,9 @@ router.put(
         const { categoryIdx, name, price, eventInfo } = req.body;
         const { productIdx } = req.params;
 
-        const client = await pgPool.connect();
-        const companyIdxArray = [];
-        const eventIdxArray = [];
-        const eventPriceArray = [];
-        eventInfo.forEach((event) => {
-            //companyIdx가 없으면 넣지 않는다
-            if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
-                companyIdxArray.push(event.companyIdx);
-                eventIdxArray.push(event.eventIdx);
-                if (!event.eventPrice) {
-                    event.eventPrice = null;
-                }
-                eventPriceArray.push(event.eventPrice);
-            }
-        });
-        const imageUrl = req.file ? req.file.location : null;
-        const updateParams = [categoryIdx, name, price, productIdx];
-        if (req.file) {
-            updateParams.push(imageUrl);
-        }
-        try {
-            await client.query("BEGIN");
-            // product 존재 여부 확인
-            const productExistenceCheck = await client.query(
-                `
-                SELECT idx
-                FROM product
-                WHERE idx = $1
-                `,
-                [productIdx]
-            );
+        await putProduct(productIdx, categoryIdx, name, price, eventInfo, req.file);
 
-            // 존재하지 않는 productIdx인 경우
-            if (productExistenceCheck.rows.length === 0) {
-                throw new BadRequestException("productIdx에 해당하는 product가 없음");
-            }
-            // product update
-            await client.query(
-                `
-                UPDATE
-                    product
-                SET
-                    category_idx = $1,
-                    name = $2,
-                    price = $3
-                    ${imageUrl ? ", image_url = $5" : ""}
-                WHERE
-                    idx = $4            
-                `,
-                updateParams
-            );
-
-            // 헹사 update (깉은 월 행사 삭제)
-            await client.query(
-                `
-                DELETE
-                FROM
-                    event_history
-                WHERE
-                    product_idx = $1
-                    AND start_date >= date_trunc('month', current_date)
-                    AND start_date < date_trunc('month', current_date) + interval '1 month'                
-                `,
-                [productIdx]
-            );
-
-            // 행사 삽입
-            await client.query(
-                `
-                INSERT INTO event_history
-                    (start_date, product_idx, company_idx, event_idx, price )
-                VALUES
-                    (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
-                `,
-                [productIdx, companyIdxArray, eventIdxArray, eventPriceArray]
-            );
-
-            await client.query("COMMIT");
-            res.status(201).send();
-        } catch (err) {
-            await client.query("ROLLBACK");
-            next(err);
-        } finally {
-            client.release();
-        }
+        res.status(201).send();
     })
 );
 
@@ -205,18 +123,8 @@ router.delete(
     wrapper(async (req, res, next) => {
         const { productIdx } = req.params;
 
-        await query(
-            `
-            UPDATE
-                product
-            SET
-                deleted_at = current_date
-            WHERE
-                idx = $1
-            `,
-            [productIdx]
-        );
-        res.status(201).send();
+        await deleteProduct(productIdx);
+        res.status(204).send();
     })
 );
 
