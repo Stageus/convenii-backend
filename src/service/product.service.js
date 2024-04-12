@@ -16,7 +16,7 @@ const EventHistoryResponseDto = require("../dto/eventDto/EventHistoryResponseDto
 const COMPANY_SIZE = 3;
 /**
  *
- * @param {LoginUser} user
+ * @param {Account} user
  * @param {number} productIdx
  * @returns { Promise<
  *      Product,
@@ -40,7 +40,7 @@ const getProductByIdx = async (user, productIdx) => {
 
 /**
  *
- * @param {req.user} user
+ * @param {Account} user
  * @param {number} page
  * @returns {Promise<Array<{
  *          product:Product
@@ -64,7 +64,7 @@ const getProductAll = async (user, page) => {
 
 /**
  *
- * @param {req.user} user
+ * @param {Account} user
  * @param {number} companyIdx
  * @param {number} page
  * @param {string} option
@@ -100,7 +100,7 @@ const getProductsByCompanyIdx = async (user, companyIdx, page, option) => {
 };
 /**
  *
- * @param {req.user} user
+ * @param {Account} user
  * @param {string} keyword
  * @param {Array<number>} eventFilter
  * @param {Array<number>} categoryFilter

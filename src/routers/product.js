@@ -28,7 +28,7 @@ router.get(
 
         res.status(200).send({
             data: await getProductAll(user, page),
-            authStatus: req.isLogin,
+            authStatus: user.isLogin,
         });
     })
 );
@@ -44,7 +44,7 @@ router.get(
 
         res.status(200).send({
             data: await getProductsByCompanyIdx(user, companyIdx, page, option),
-            authStatus: req.isLogin,
+            authStatus: user.isLogin,
         });
     })
 );
@@ -59,7 +59,7 @@ router.get(
 
         res.status(200).send({
             data: await getProductsBySearch(user, keyword, categoryFilter, eventFilter, page),
-            authStatus: req.isLogin,
+            authStatus: user.isLogin,
         });
     })
 );
@@ -74,7 +74,7 @@ router.get(
 
         res.status(200).send({
             data: await getProductByIdx(user, productIdx),
-            authStatus: req.isLogin,
+            authStatus: user.isLogin,
         });
     })
 );
