@@ -1,16 +1,18 @@
 const query = require("../modules/query");
 const pgPool = require("../modules/pgPool");
-
+const { BadRequestException } = require("../modules/Exception");
+const ProductDataDto = require("../dto/productDto/ProductDataDto");
 /**
  * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
  * @param {number} userIdx
  * @param {number} productIdx
+ * @param {pg.PoolClient} conn
  * @returns {Promise<{
  *  idx: number;
- *  category_idx: number;
+ *  categoryIdx: number;
  *  name: string;
  *  price: string;
- *  image_url: string;
+ *  productUrl: string;
  *  score: string;
  *  createdAt: Date;
  *  bookmarked: boolean;
@@ -46,13 +48,17 @@ const getProductData = async (userIdx, productIdx, conn = pgPool) => {
         [userIdx, productIdx],
         conn
     );
-    console.log(typeof productSelectResult.rows[0].score);
-    return productSelectResult.rows[0];
+    if (!productSelectResult.rows.length) {
+        throw new NotFoundException("Cannot find product");
+    }
+
+    return new ProductDataDto(productSelectResult.rows[0]);
 };
 
 /**
  *
  * @param {number} productIdx
+ * @param {pg.PoolClient} conn
  * @returns {Promise<Array<{
  *      month: Date,
  *      events: Array<{
@@ -115,6 +121,7 @@ const getEventHistoryData = async (productIdx, conn = pgPool) => {
  * @param {number} userIdx
  * @param {number} page
  * @param {number} pageSizeOption
+ * @param {pg.PoolClient} conn
  *
  * @returns {Promise<Array<{
  *      idx: number,
@@ -134,7 +141,7 @@ const getEventHistoryData = async (productIdx, conn = pgPool) => {
  *   }>
  * }
  */
-const getProductsData = async (userIdx, page, pageSizeOption) => {
+const getProductsData = async (userIdx, page, pageSizeOption, conn = pgPool) => {
     const products = await query(
         `
             SELECT
@@ -182,7 +189,8 @@ const getProductsData = async (userIdx, page, pageSizeOption) => {
                 product.name
             LIMIT $2 OFFSET $3
             `,
-        [userIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]
+        [userIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption],
+        conn
     );
     return products.rows;
 };
@@ -194,6 +202,7 @@ const getProductsData = async (userIdx, page, pageSizeOption) => {
  * @param {number} pageSizeOption
  * @param {number} offset
  * @param {number} companySize
+ * @param {pg.PoolClient} conn
  *
  * @returns {Promise<Array<{
  *      idx: number,
@@ -213,7 +222,7 @@ const getProductsData = async (userIdx, page, pageSizeOption) => {
  *   }>
  * }
  */
-const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, offset, companySize) => {
+const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, offset, companySize, conn = pgPool) => {
     const products = await query(
         `
             WITH productInfo AS (
