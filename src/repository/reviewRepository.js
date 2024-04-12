@@ -17,12 +17,10 @@ const getReviewsData = async (productIdx, pageSizeOption, page) => {
     const reviews = await query(
         `
             SELECT
-                review.idx,
-                review.product_idx,
-                account.nickname,
+                review.product_idx AS "productIdx",
                 review.content,
                 review.score,
-                review.created_at
+                review.created_at AS "createdAt",
             FROM
                 review 
             JOIN
