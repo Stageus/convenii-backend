@@ -1,5 +1,9 @@
 class Account {
     /**
+     * @typedef {"false"|"true"|"expired"} LoginStatus
+     */
+
+    /**
      * @type {number}
      */
     idx;
@@ -25,13 +29,18 @@ class Account {
     rankIdx;
 
     /**
+     *@type {LoginStatus}
+     */
+    isLogin;
+    /**
      *
      * @param {{
      *  idx: number;
      *  createdAt: Date;
      *  email: string;
      *  nickname: string;
-     *  rankIdx; number;
+     *  rankIdx: number;
+     *  isLogin: LoginStatus;
      * }} data
      */
     constructor(data) {
@@ -40,6 +49,7 @@ class Account {
         this.email = data.email;
         this.nickname = data.nickname;
         this.rankIdx = data.rankIdx;
+        this.isLogin = data.isLogin;
     }
 }
 
