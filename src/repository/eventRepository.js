@@ -2,6 +2,7 @@ const query = require("../modules/query");
 const pgPool = require("../modules/pgPool");
 const EventHistoryDataDto = require("../dto/eventDto/EventHistoryDataDto");
 const { NotFoundException } = require("../modules/Exception");
+const PostEventsDataDto = require("../dto/eventDto/PostEventsDataDto");
 
 /**
  *
@@ -87,14 +88,11 @@ const deleteCurrentMonthEventsByProductIdx = async (productIdx, conn) => {
 
 /**
  *
- * @param {number} productIdx
- * @param {Array<number>} companyIdxArray
- * @param {Array<number>} eventIdxArray
- * @param {Array<string>} eventPriceArray
+ * @param {PostEventsDataDto} postEventsDataDto
  * @param {PoolClient} conn
  * @returns {Promise<QueryResult>}
  */
-const postEventsByProductIdx = async (productIdx, companyIdxArray, eventIdxArray, eventPriceArray, conn) => {
+const postEventsDataByProductIdx = async (postEventsDataDto, conn = pgPool) => {
     return await query(
         `
             INSERT INTO event_history
@@ -102,12 +100,12 @@ const postEventsByProductIdx = async (productIdx, companyIdxArray, eventIdxArray
             VALUES
                 (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
             `,
-        [productIdx, companyIdxArray, eventIdxArray, eventPriceArray],
+        postEventsDataDto.toParams(),
         conn
     );
 };
 module.exports = {
     getEventHistoryData,
     deleteCurrentMonthEventsByProductIdx,
-    postEventsByProductIdx,
+    postEventsDataByProductIdx,
 };

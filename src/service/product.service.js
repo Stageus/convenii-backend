@@ -3,10 +3,9 @@ const { getProductDataByIdx, postProductData, checkProductExistByIdx, putProduct
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
-const productEventWrapper = require("../modules/productEventWrapper");
 
 const pgPool = require("../modules/pgPool");
-const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx, getEventHistoryData } = require("../repository/eventRepository");
+const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx, getEventHistoryData, postEventsDataByProductIdx } = require("../repository/eventRepository");
 const patternTest = require("../modules/patternTest");
 const ProductBO = require("../bo/ProductBO");
 const EventHistoryBO = require("../bo/EventHistoryBO");
@@ -15,6 +14,9 @@ const EventHistoryResponseDto = require("../dto/eventDto/EventHistoryResponseDto
 const Account = require("../entity/Account");
 const ProductsWithEventsBO = require("../bo/ProductsWithEventsBO");
 const ProductWithEventsResponseDto = require("../dto/productDto/ProductsWithEventsResponseDto");
+const PostProductsWithEventsDataDto = require("../dto/productDto/PostProductDataDto");
+const PostProductDataDto = require("../dto/productDto/PostProductDataDto");
+const PostEventsDataDto = require("../dto/eventDto/PostEventsDataDto");
 
 const COMPANY_SIZE = 3;
 /**
@@ -106,42 +108,28 @@ const getProductsWithEventsBySearch = async (user, keyword, categoryFilter, even
  * @param {number} categoryIdx
  * @param {string} name
  * @param {string} price
- * @param {Array} eventInfo
+ * @param {Array<Event>} events
  * @param {req.file} file
  * @returns {Promise<void>}
  */
-const postProduct = async (categoryIdx, name, price, eventInfo, file) => {
-    const companyIdxArray = [];
-    const eventIdxArray = [];
-    const eventPriceArray = [];
-    if (typeof categoryIdx !== "string" || parseInt(categoryIdx) < 0) {
-        throw new BadRequestException("categoryIdx 오류");
-    }
-    if (typeof name !== "string" || name.trim().length === 0) {
-        throw new BadRequestException("name 오류");
-    }
-    if (typeof price !== "string" || parseInt(price) <= 0) {
-        throw new BadRequestException("price 오류");
-    }
-    if (eventInfo.length === 0) {
-        throw new BadRequestException("eventInfo 오류");
-    }
-    eventInfo.forEach((event) => {
-        //companyIdx가 없으면 넣지 않는다
-        if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
-            companyIdxArray.push(event.companyIdx);
-            eventIdxArray.push(event.eventIdx);
-            if (!event.eventPrice) {
-                event.eventPrice = null;
-            }
-            eventPriceArray.push(event.eventPrice);
-        }
-    });
+const postProduct = async (categoryIdx, name, price, events, file) => {
     const client = await pgPool.connect();
     try {
         await client.query("BEGIN");
-        const newProductIdx = await postProductData(categoryIdx, name, price, file, client);
-        await postEventsByProductIdx(newProductIdx, companyIdxArray, eventIdxArray, eventPriceArray, client);
+
+        const productDataDto = new PostProductDataDto({
+            categoryIdx: categoryIdx,
+            name: name,
+            price: price,
+            productImg: file.location,
+        });
+        const newProductIdx = await postProductData(productDataDto, client);
+
+        const eventsDataDto = new PostEventsDataDto({
+            productIdx: newProductIdx,
+            events: events,
+        });
+        await postEventsDataByProductIdx(eventsDataDto, client);
         await client.query("COMMIT");
     } catch (err) {
         client.query("ROLLBACK");

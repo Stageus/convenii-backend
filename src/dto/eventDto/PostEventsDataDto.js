@@ -33,18 +33,18 @@ class PostEventsDataDto {
      * @throws {BadRequestException}
      */
     constructor(data) {
-        this.productIdx = this.productIdx;
+        this.productIdx = data.productIdx;
         this.companyIdxArray = [];
         this.eventIdxArray = [];
         this.eventPriceArray = [];
         data.events.forEach((event) => {
             if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
-                companyIdxArray.push(event.companyIdx);
-                eventIdxArray.push(event.eventIdx);
+                this.companyIdxArray.push(event.companyIdx);
+                this.eventIdxArray.push(event.eventIdx);
                 if (!event.eventPrice) {
                     event.eventPrice = null;
                 }
-                eventPriceArray.push(event.eventPrice);
+                this.eventPriceArray.push(event.eventPrice);
             }
         });
         this.validtate();
@@ -60,6 +60,15 @@ class PostEventsDataDto {
         if (this.companyIdxArray.length === 0) {
             throw new BadRequestException("event error");
         }
+    }
+
+    /**
+     *
+     * @returns {[productIdx, companyIdxArray, eventIdxArray, eventPriceArray]}
+     */
+    toParams() {
+        const array = [this.productIdx, this.companyIdxArray, this.eventIdxArray, this.eventPriceArray];
+        return array;
     }
 }
 

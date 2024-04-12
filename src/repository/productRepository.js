@@ -3,6 +3,7 @@ const pgPool = require("../modules/pgPool");
 const { BadRequestException, NotFoundException } = require("../modules/Exception");
 const ProductDataDto = require("../dto/productDto/ProductDataDto");
 const ProductsWithEventsDataDto = require("../dto/productDto/ProductsWithEventsDataDto");
+const PostProductDataDto = require("../dto/productDto/PostProductDataDto");
 /**
  * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
  * @param {number} userIdx
@@ -314,14 +315,11 @@ const getProductsWithEventsDataBySearch = async ({ userIdx, keyword, categoryFil
 
 /**
  *
- * @param {number} categoryIdx
- * @param {string} name
- * @param {string} price
- * @param {req.file} file
+ * @param {PostProductDataDto} postProductData
  * @param {PoolClient} conn
  * @returns {Promise<number>}
  */
-const postProductData = async (categoryIdx, name, price, file, conn) => {
+const postProductData = async (postProductData, conn = pgPool) => {
     const product = await query(
         `
             INSERT INTO product (category_idx, name, price, image_url)
@@ -333,7 +331,7 @@ const postProductData = async (categoryIdx, name, price, file, conn) => {
             )
             RETURNING idx
         `,
-        [categoryIdx, name, price, file.location],
+        postProductData.toParams(),
         conn
     );
 
