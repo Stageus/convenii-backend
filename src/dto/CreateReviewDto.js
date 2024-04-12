@@ -39,10 +39,10 @@ class CreateReviewDto {
         if (!this.productIdx || typeof this.productIdx !== "number") {
             throw new BadRequestException("productIdx 오류");
         }
-        if (!patternTest("content", content)) {
+        if (!patternTest("content", this.content)) {
             throw new BadRequestException("content 오류");
         }
-        if (!patternTest("score", score)) {
+        if (!patternTest("score", this.score)) {
             throw new BadRequestException("score 오류");
         }
     }
