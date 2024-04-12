@@ -57,6 +57,15 @@ class PostProductDataDto {
             throw new BadRequestException("price error");
         }
     }
+
+    /**
+     *
+     * @returns {[categoryIdx,name, price, productImg]}
+     */
+    toParams() {
+        const array = [this.categoryIdx, this.name, this.price, this.productImg];
+        return array;
+    }
 }
 
 module.exports = PostProductDataDto;
