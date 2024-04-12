@@ -1,5 +1,16 @@
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductDataByIdx, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData, getProductsWithEventsData, getProductsWithEventsDataByCompanyIdx } = require("../repository/productRepository");
+const {
+    getProductDataByIdx,
+    getProductsDataByCompanyIdx,
+    getProductsDataBySearch,
+    postProductData,
+    checkProductExistByIdx,
+    putProductData,
+    deleteProductData,
+    getProductsWithEventsData,
+    getProductsWithEventsDataByCompanyIdx,
+    getProductsWithEventsDataBySearch,
+} = require("../repository/productRepository");
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
@@ -45,7 +56,7 @@ const getProductByIdx = async (user, productIdx) => {
  *
  * @param {Account} user
  * @param {number} page
- * @returns {Promise<Array<ProductWithEventsResponseDto>}
+ * @returns {Promise<ProductWithEventsResponseDto>}
  */
 const getProductsWithEvents = async (user, page) => {
     const pageSizeOption = 10;
@@ -62,11 +73,7 @@ const getProductsWithEvents = async (user, page) => {
  * @param {number} page
  * @param {number} pageSizeOption
  * @param {number} offset
- * @returns {Promise<Array<{
- *          product:Product
- *          events:EventHistory
- *      }
- * >}
+ * @returns {Promise<ProductWithEventsResponseDto>}
  */
 const getProductsWithEventsByCompanyIdx = async (user, companyIdx, pageSizeOption, offset) => {
     const productsWithEventsData = await getProductsWithEventsDataByCompanyIdx({
@@ -87,29 +94,22 @@ const getProductsWithEventsByCompanyIdx = async (user, companyIdx, pageSizeOptio
  * @param {Array<number>} eventFilter
  * @param {Array<number>} categoryFilter
  * @param {number} page
- * @returns {Promise<Array<{
- *          product:Product
- *          events:EventHistory
- *      }
- * >}
+ * @param {number} pageSizeOption
+ * @returns {Promise<ProductWithEventsResponseDto>}
  */
-const getProductsBySearch = async (user, keyword, categoryFilter, eventFilter, page) => {
-    const pageSizeOption = 10;
-    if (!patternTest("keyword", keyword)) {
-        throw new BadRequestException("keyword 입력 오류");
-    }
-    if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
-        throw new BadRequestException("page 입력 오류");
-    }
-    if (!eventFilter) {
-        eventFilter = [1, 2, 3, 4, 5, 6];
-    }
-    if (!categoryFilter) {
-        categoryFilter = [1, 2, 3, 4, 5, 6];
-    }
-    const productsData = await getProductsDataBySearch(user.idx, keyword, categoryFilter, eventFilter, pageSizeOption, page);
+const getProductsWithEventsBySearch = async (user, keyword, categoryFilter, eventFilter, page, pageSizeOption) => {
+    const productsWithEventsData = await getProductsWithEventsDataBySearch({
+        userIdx: user.idx,
+        keyword: keyword,
+        categoryFilter: categoryFilter,
+        eventFilter: eventFilter,
+        page: page,
+        pageSizeOption: pageSizeOption,
+    });
 
-    return await productEventWrapper(productsData);
+    const productsWithEventsBO = new ProductsWithEventsBO(productsWithEventsData);
+
+    return new ProductWithEventsResponseDto(productsWithEventsBO);
 };
 
 /**
@@ -236,7 +236,7 @@ module.exports = {
     getProductByIdx,
     getProductsWithEvents,
     getProductsWithEventsByCompanyIdx,
-    getProductsBySearch,
+    getProductsWithEventsBySearch,
     postProduct,
     putProduct,
     deleteProduct,

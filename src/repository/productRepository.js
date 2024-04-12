@@ -199,7 +199,8 @@ const getProductsWithEventsDataByCompanyIdx = async ({ userIdx, companyIdx, page
             ORDER BY priorityScore DESC, name
             LIMIT $3 OFFSET $4;
             `,
-        [userIdx, companyIdx, pageSizeOption, offset, companySize - 1]
+        [userIdx, companyIdx, pageSizeOption, offset, companySize - 1],
+        conn
     );
     if (!productsSelectResult.rows.length) {
         throw new NotFoundException("cannot find products");
@@ -215,26 +216,21 @@ const getProductsWithEventsDataByCompanyIdx = async ({ userIdx, companyIdx, page
  * @param {Array<number>} eventFilter
  * @param {number} pageSizeOption
  * @param {number} page
- * @returns {Promise<Array<{
- *      idx: number,
- *      categoryIdx: number,
- *      name: string,
- *      price: string,
- *      productImg: string,
- *      score: string,
- *      createdAt: Date,
- *      bookmarked: boolean,
- *      month: Date,
- *      events: Array<{
- *          companyIdx: number,
- *          eventIdx: number,
- *          price: string | null
- *      }| null>
- *   }>
+ * @param {pg.PoolClient} conn
+ * @param {
+ *  userIdx: number,
+ *  keyword: string,
+ *  categoryFilter: Array<number>,
+ *  eventFilter: Array<number>,
+ *  pageSizeOption: number,
+ *  page: number,
+ *  conn: pg.PoolClient
  * }
+ * @returns {Promise<ProductsWithEventsDataDto>}
+ * @throws {NotFoundException}
  */
-const getProductsDataBySearch = async (userIdx, keyword, categoryFilter, eventFilter, pageSizeOption, page) => {
-    const products = await query(
+const getProductsWithEventsDataBySearch = async ({ userIdx, keyword, categoryFilter, eventFilter, page, pageSizeOption, conn = pgPool }) => {
+    const productsSelectResult = await query(
         `
             --해당 이벤트가 존재하는 product_idx 가져오기
             WITH possilbe_product AS (
@@ -251,12 +247,12 @@ const getProductsDataBySearch = async (userIdx, keyword, categoryFilter, eventFi
             )
             SELECT
                 product.idx,
-                product.category_idx AS "categoryIdx",
+                product.category_idx,
                 product.name,
                 product.price,
-                product.image_url AS "productImg",
+                product.image_url,
                 product.score,
-                product.created_at AS "createdAt",
+                product.created_at,
                 --북마크 여부
                 (
                     SELECT
@@ -306,10 +302,14 @@ const getProductsDataBySearch = async (userIdx, keyword, categoryFilter, eventFi
                 product.name
             LIMIT $5 OFFSET $6
             `,
-        [userIdx, "%" + keyword + "%", categoryFilter, eventFilter, pageSizeOption, (parseInt(page) - 1) * pageSizeOption]
+        [userIdx, "%" + keyword + "%", categoryFilter, eventFilter, pageSizeOption, (parseInt(page) - 1) * pageSizeOption],
+        conn
     );
 
-    return products.rows;
+    if (!productsSelectResult.rows.length) {
+        throw new NotFoundException("cannot find products");
+    }
+    return new ProductsWithEventsDataDto(productsSelectResult.rows);
 };
 
 /**
@@ -414,7 +414,7 @@ module.exports = {
     getProductDataByIdx,
     getProductsWithEventsData,
     getProductsWithEventsDataByCompanyIdx,
-    getProductsDataBySearch,
+    getProductsWithEventsDataBySearch,
     postProductData,
     checkProductExistByIdx,
     putProductData,

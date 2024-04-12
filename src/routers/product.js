@@ -6,7 +6,7 @@ const adminAuth = require("../middlewares/adminAuth");
 const checkAuthStatus = require("../middlewares/checkAuthStatus");
 const uploadImg = require("../middlewares/uploadImg");
 const wrapper = require("../modules/wrapper");
-const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct, deleteProduct, getProductsWithEvents, getProductsWithEventsByCompanyIdx } = require("../service/product.service");
+const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct, deleteProduct, getProductsWithEvents, getProductsWithEventsByCompanyIdx, getProductsWithEventsBySearch } = require("../service/product.service");
 const patternTest = require("../modules/patternTest");
 const { getProductsWithEventsData } = require("../repository/productRepository");
 const COMPANY_SIZE = 3;
@@ -77,9 +77,21 @@ router.get(
     wrapper(async (req, res, next) => {
         let { keyword, categoryFilter, eventFilter, page } = req.query;
         const user = req.user;
-
+        const pageSizeOption = 10;
+        if (!patternTest("keyword", keyword)) {
+            throw new BadRequestException("keyword 입력 오류");
+        }
+        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
+            throw new BadRequestException("page 입력 오류");
+        }
+        if (!eventFilter) {
+            eventFilter = [1, 2, 3, 4, 5, 6];
+        }
+        if (!categoryFilter) {
+            categoryFilter = [1, 2, 3, 4, 5, 6];
+        }
         res.status(200).send({
-            data: await getProductsBySearch(user, keyword, categoryFilter, eventFilter, page),
+            data: await getProductsWithEventsBySearch(user, keyword, categoryFilter, eventFilter, page, pageSizeOption),
             authStatus: user.isLogin,
         });
     })
