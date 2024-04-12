@@ -1,6 +1,6 @@
 const CreateProductDto = require("../dto/CreateProductDto");
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData } = require("../repository/productRepository");
+const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData } = require("../repository/productRepository");
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
@@ -175,8 +175,45 @@ const postProduct = async (categoryIdx, name, price, eventInfo, file) => {
             eventPriceArray.push(event.eventPrice);
         }
     });
-    const postSuccess = await postProductData(categoryIdx, name, price, file.location, companyIdxArray, eventIdxArray, eventPriceArray);
-    if (!postSuccess) {
+
+    if (!(await postProductData(categoryIdx, name, price, file, companyIdxArray, eventIdxArray, eventPriceArray))) {
+        throw new ServerError("unexpected error occur");
+    }
+    return;
+};
+
+const putProduct = async (productIdx, categoryIdx, name, price, eventInfo, file) => {
+    const companyIdxArray = [];
+    const eventIdxArray = [];
+    const eventPriceArray = [];
+    if (typeof categoryIdx !== "string" || parseInt(categoryIdx) < 0) {
+        throw new BadRequestException("categoryIdx 오류");
+    }
+    if (typeof name !== "string" || name.trim().length === 0) {
+        throw new BadRequestException("name 오류");
+    }
+    if (typeof price !== "string" || parseInt(price) <= 0) {
+        throw new BadRequestException("price 오류");
+    }
+    if (eventInfo.length === 0) {
+        throw new BadRequestException("eventInfo 오류");
+    }
+    eventInfo.forEach((event) => {
+        //companyIdx가 없으면 넣지 않는다
+        if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
+            companyIdxArray.push(event.companyIdx);
+            eventIdxArray.push(event.eventIdx);
+            if (!event.eventPrice) {
+                event.eventPrice = null;
+            }
+            eventPriceArray.push(event.eventPrice);
+        }
+    });
+    if (!(await checkProductExistByIdx(productIdx))) {
+        throw new BadRequestException("productIdx에 해당하는 product가 없음");
+    }
+
+    if (!(await putProductData(productIdx, categoryIdx, name, price, file, companyIdxArray, eventIdxArray, eventPriceArray))) {
         throw new ServerError("unexpected error occur");
     }
     return;
