@@ -15,8 +15,8 @@ const patterns = {
  * @param {any} data
  * @returns {boolean}
  */
-const test = (dataName, data) => {
+const patternTest = (dataName, data) => {
     return patterns[dataName].test(data);
 };
 
-module.exports = pattenrnTest;
+module.exports = patternTest;
