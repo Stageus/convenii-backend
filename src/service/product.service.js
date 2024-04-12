@@ -1,5 +1,5 @@
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductDataByIdx, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData, getProductsWithEventsData } = require("../repository/productRepository");
+const { getProductDataByIdx, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData, getProductsWithEventsData, getProductsWithEventsDataByCompanyIdx } = require("../repository/productRepository");
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
@@ -45,11 +45,7 @@ const getProductByIdx = async (user, productIdx) => {
  *
  * @param {Account} user
  * @param {number} page
- * @returns {Promise<Array<{
- *          product:Product
- *          events:EventHistory
- *      }
- * >}
+ * @returns {Promise<Array<ProductWithEventsResponseDto>}
  */
 const getProductsWithEvents = async (user, page) => {
     const pageSizeOption = 10;
@@ -57,7 +53,6 @@ const getProductsWithEvents = async (user, page) => {
     const productsWithEventsBO = new ProductsWithEventsBO(productsWithEventsData);
 
     return new ProductWithEventsResponseDto(productsWithEventsBO);
-    //return await productEventWrapper(productsData);
 };
 
 /**
@@ -65,36 +60,25 @@ const getProductsWithEvents = async (user, page) => {
  * @param {Account} user
  * @param {number} companyIdx
  * @param {number} page
- * @param {string} option
+ * @param {number} pageSizeOption
+ * @param {number} offset
  * @returns {Promise<Array<{
  *          product:Product
  *          events:EventHistory
  *      }
  * >}
  */
-const getProductsByCompanyIdx = async (user, companyIdx, page, option) => {
-    let pageSizeOption = 10;
-    let offset = (parseInt(page) - 1) * pageSizeOption;
-    if (!companyIdx || isNaN(parseInt(companyIdx, 10)) || companyIdx <= 0 || companyIdx > COMPANY_SIZE) {
-        throw new BadRequestException("companyIdx 입력 오류");
-    }
-    if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
-        throw new BadRequestException("page 입력 오류");
-    }
-    if (option !== "main" && option !== "all") {
-        throw new BadRequestException("option 입력 오류");
-    }
-    if (option === "main") {
-        pageSizeOption = 3;
-        offset = 0;
-    }
+const getProductsWithEventsByCompanyIdx = async (user, companyIdx, pageSizeOption, offset) => {
+    const productsWithEventsData = await getProductsWithEventsDataByCompanyIdx({
+        userIdx: user.idx,
+        companyIdx: companyIdx,
+        pageSizeOption: pageSizeOption,
+        offset: offset,
+        companySize: COMPANY_SIZE,
+    });
+    const productsWithEventsBO = new ProductsWithEventsBO(productsWithEventsData);
 
-    const productsData = await getProductsDataByCompanyIdx(user.idx, companyIdx, pageSizeOption, offset, COMPANY_SIZE);
-    if (!productsData) {
-        throw new NotFoundException("Cannot find products");
-    }
-
-    return await productEventWrapper(productsData);
+    return new ProductWithEventsResponseDto(productsWithEventsBO);
 };
 /**
  *
@@ -251,7 +235,7 @@ const deleteProduct = async (productIdx) => {
 module.exports = {
     getProductByIdx,
     getProductsWithEvents,
-    getProductsByCompanyIdx,
+    getProductsWithEventsByCompanyIdx,
     getProductsBySearch,
     postProduct,
     putProduct,

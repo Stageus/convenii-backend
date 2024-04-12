@@ -6,10 +6,10 @@ const adminAuth = require("../middlewares/adminAuth");
 const checkAuthStatus = require("../middlewares/checkAuthStatus");
 const uploadImg = require("../middlewares/uploadImg");
 const wrapper = require("../modules/wrapper");
-const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct, deleteProduct, getProductsWithEvents } = require("../service/product.service");
+const { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct, deleteProduct, getProductsWithEvents, getProductsWithEventsByCompanyIdx } = require("../service/product.service");
 const patternTest = require("../modules/patternTest");
 const { getProductsWithEventsData } = require("../repository/productRepository");
-
+const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
 //  GET/company/:companyIdx       => 회사별로 행사 정렬해서 가져오기
@@ -46,9 +46,25 @@ router.get(
         const { companyIdx } = req.params;
         const { page, option } = req.query;
         const user = req.user;
+        let pageSizeOption = 10;
+        let offset = (parseInt(page) - 1) * pageSizeOption;
+        if (!companyIdx || !patternTest("idx", companyIdx) || companyIdx <= 0 || companyIdx > COMPANY_SIZE) {
+            throw new BadRequestException("companyIdx 입력 오류");
+        }
+        if (!page || !patternTest("page", page)) {
+            throw new BadRequestException("page 입력 오류");
+        }
+
+        if (option !== "main" && option !== "all") {
+            throw new BadRequestException("option 입력 오류");
+        }
+        if (option === "main") {
+            pageSizeOption = 3;
+            offset = 0;
+        }
 
         res.status(200).send({
-            data: await getProductsByCompanyIdx(user, companyIdx, page, option),
+            data: await getProductsWithEventsByCompanyIdx(user, companyIdx, pageSizeOption, offset),
             authStatus: user.isLogin,
         });
     })

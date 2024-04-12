@@ -55,8 +55,8 @@ const getProductDataByIdx = async (userIdx, productIdx, conn = pgPool) => {
  * @param {number} pageSizeOption
  * @param {pg.PoolClient} conn
  *
- * @returns {Promise<ProductsWithEventsDataDto>
- * }
+ * @returns {Promise<ProductsWithEventsDataDto>}
+ * @throws {NotFoundException}
  */
 const getProductsWithEventsData = async (userIdx, page, pageSizeOption, conn = pgPool) => {
     const productsSelectResult = await query(
@@ -117,43 +117,28 @@ const getProductsWithEventsData = async (userIdx, page, pageSizeOption, conn = p
 
 /**
  *
- * @param {number} userIdx
- * @param {number} companyIdx
- * @param {number} pageSizeOption
- * @param {number} offset
- * @param {number} companySize
+ * @param { {
+ *  userIdx: number,
+ *  companyIdx: number,
+ *  pageSizeOption: number,
+ *  companySize: number.Array
+ * }}
  * @param {pg.PoolClient} conn
- *
- * @returns {Promise<Array<{
- *      idx: number,
- *      categoryIdx: number,
- *      name: string,
- *      price: string,
- *      productImg: string,
- *      score: string,
- *      createdAt: Date,
- *      bookmarked: boolean,
- *      month: Date,
- *      events: Array<{
- *          companyIdx: number,
- *          eventIdx: number,
- *          price: string | null
- *      }| null>
- *   }>
- * }
+ * @returns {Promise<ProductsWithEventsDataDto>}
+ * @throws {NotFoundException}
  */
-const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, offset, companySize, conn = pgPool) => {
-    const products = await query(
+const getProductsWithEventsDataByCompanyIdx = async ({ userIdx, companyIdx, pageSizeOption, offset, companySize, conn = pgPool }) => {
+    const productsSelectResult = await query(
         `
             WITH productInfo AS (
                 SELECT
                     product.idx,
-                    product.category_idx AS "categoryIdx",
+                    product.category_idx,
                     product.name,
                     product.price,
-                    product.image_url AS "productImg",
+                    product.image_url,
                     product.score,
-                    product.created_at AS "createdAt",
+                    product.created_at,
                     (
                         SELECT
                             bookmark.idx
@@ -216,7 +201,10 @@ const getProductsDataByCompanyIdx = async (userIdx, companyIdx, pageSizeOption, 
             `,
         [userIdx, companyIdx, pageSizeOption, offset, companySize - 1]
     );
-    return products.rows;
+    if (!productsSelectResult.rows.length) {
+        throw new NotFoundException("cannot find products");
+    }
+    return new ProductsWithEventsDataDto(productsSelectResult.rows);
 };
 
 /**
@@ -425,7 +413,7 @@ const deleteProductData = async (productIdx) => {
 module.exports = {
     getProductDataByIdx,
     getProductsWithEventsData,
-    getProductsDataByCompanyIdx,
+    getProductsWithEventsDataByCompanyIdx,
     getProductsDataBySearch,
     postProductData,
     checkProductExistByIdx,

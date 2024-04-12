@@ -75,6 +75,20 @@ class Account {
     isExpired() {
         this.isLogin = "expired";
     }
+    validate() {
+        if (!patternTest("idx", this.idx)) {
+            throw new BadRequestException("idx error");
+        }
+        if (!patternTest("email", this.email)) {
+            throw new BadRequestException("email error");
+        }
+        if (!patternTest("nickname", this.nickname)) {
+            throw new BadRequestException("nickname error");
+        }
+        if (!patternTest("idx", this.rankIdx)) {
+            throw new BadRequestException("rankIdx error");
+        }
+    }
 }
 
 module.exports = Account;
