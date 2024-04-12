@@ -1,4 +1,4 @@
-const Event = require("../../entity/Event");
+const Event = require("../entity/Event");
 
 class EventHistoryBO {
     /**
