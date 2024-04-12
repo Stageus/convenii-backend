@@ -7,7 +7,7 @@ const Product = require("../entity/Product");
 const productEventWrapper = require("../modules/productEventWrapper");
 const e = require("express");
 const pgPool = require("../modules/pgPool");
-const { postEventsByProductIdx } = require("../repository/eventRepository");
+const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx } = require("../repository/eventRepository");
 
 const keywordPattern = /^(null|[d가-힣A-Za-z]{0,30})$/;
 const COMPANY_SIZE = 3;
@@ -185,7 +185,7 @@ const postProduct = async (categoryIdx, name, price, eventInfo, file) => {
         await client.query("COMMIT");
     } catch (err) {
         client.query("ROLLBACK");
-        throw new ServerError("unexpected error occur");
+        throw err;
     } finally {
         client.release();
     }
@@ -230,12 +230,24 @@ const putProduct = async (productIdx, categoryIdx, name, price, eventInfo, file)
             eventPriceArray.push(event.eventPrice);
         }
     });
+
     if (!(await checkProductExistByIdx(productIdx))) {
         throw new BadRequestException("productIdx에 해당하는 product가 없음");
     }
+    const client = await pgPool.connect();
+    try {
+        await client.query("BEGIN");
+        await putProductData(productIdx, categoryIdx, name, price, file, client);
+        //현재 행사 삭제하고 다시 넣기
+        await deleteCurrentMonthEventsByProductIdx(productIdx, client);
+        await postEventsByProductIdx(productIdx, companyIdxArray, eventIdxArray, eventPriceArray, client);
 
-    if (!(await putProductData(productIdx, categoryIdx, name, price, file, companyIdxArray, eventIdxArray, eventPriceArray))) {
-        throw new ServerError("unexpected error occur");
+        await client.query("COMMIT");
+    } catch (err) {
+        client.query("ROLLBACK");
+        throw err;
+    } finally {
+        client.release();
     }
     return;
 };

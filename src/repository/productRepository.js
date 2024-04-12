@@ -446,78 +446,39 @@ const checkProductExistByIdx = async (productIdx) => {
     }
     return true;
 };
+
 /**
  *
  * @param {number} productIdx
  * @param {number} categoryIdx
  * @param {string} name
- * @param {number} price
+ * @param {string} price
  * @param {req.file} file
- * @param {Array<number>} companyIdxArray
- * @param {Array<number>} eventIdxArray
- * @param {Array<number|null>} eventPriceArray
- * @returns {Promise<boolean>}
+ * @param {PoolClient} conn
+ * @returns
  */
-const putProductData = async (productIdx, categoryIdx, name, price, file, companyIdxArray, eventIdxArray, eventPriceArray) => {
+const putProductData = async (productIdx, categoryIdx, name, price, file, conn) => {
     const imageUrl = file ? file.location : null;
     const updateParams = [categoryIdx, name, price, productIdx];
     if (file) {
         updateParams.push(imageUrl);
     }
-    const client = await pgPool.connect();
-    let putSuccess = true;
-    try {
-        await client.query("BEGIN");
 
-        // product update
-        await client.query(
-            `
-                UPDATE
-                    product
-                SET
-                    category_idx = $1,
-                    name = $2,
-                    price = $3
-                    ${imageUrl ? ", image_url = $5" : ""}
-                WHERE
-                    idx = $4            
-                `,
-            updateParams
-        );
-
-        // 헹사 update (깉은 월 행사 삭제)
-        await client.query(
-            `
-                DELETE
-                FROM
-                    event_history
-                WHERE
-                    product_idx = $1
-                    AND start_date >= date_trunc('month', current_date)
-                    AND start_date < date_trunc('month', current_date) + interval '1 month'                
-                `,
-            [productIdx]
-        );
-
-        // 행사 삽입
-        await client.query(
-            `
-            INSERT INTO event_history
-                (start_date, product_idx, company_idx, event_idx, price )
-            VALUES
-                (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
-            `,
-            [productIdx, companyIdxArray, eventIdxArray, eventPriceArray]
-        );
-
-        await client.query("COMMIT");
-    } catch (err) {
-        await client.query("ROLLBACK");
-        putSuccess = false;
-    } finally {
-        client.release();
-        return putSuccess;
-    }
+    return await query(
+        `
+            UPDATE
+                product
+            SET
+                category_idx = $1,
+                name = $2,
+                price = $3
+                ${imageUrl ? ", image_url = $5" : ""}
+            WHERE
+                idx = $4            
+        `,
+        updateParams,
+        conn
+    );
 };
 
 const deleteProductData = async (productIdx) => {

@@ -31,7 +31,7 @@ const deleteCurrentMonthEventsByProductIdx = async (productIdx, conn) => {
  * @param {PoolClient} conn
  * @returns {Promise<QueryResult>}
  */
-const insertEventsByProductIdx = async (productIdx, companyIdxArray, eventIdxArray, eventPriceArray, conn) => {
+const postEventsByProductIdx = async (productIdx, companyIdxArray, eventIdxArray, eventPriceArray, conn) => {
     return await query(
         `
             INSERT INTO event_history
@@ -45,5 +45,5 @@ const insertEventsByProductIdx = async (productIdx, companyIdxArray, eventIdxArr
 };
 module.exports = {
     deleteCurrentMonthEventsByProductIdx,
-    insertEventsByProductIdx,
+    postEventsByProductIdx,
 };
