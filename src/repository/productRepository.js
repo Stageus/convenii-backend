@@ -11,7 +11,7 @@ const ProductDataDto = require("../dto/productDto/ProductDataDto");
  * @throws {NotFoundException}
  *
  */
-const getProductData = async (userIdx, productIdx, conn = pgPool) => {
+const getProductDataByIdx = async (userIdx, productIdx, conn = pgPool) => {
     const productSelectResult = await query(
         `SELECT
             product.idx,
@@ -45,67 +45,6 @@ const getProductData = async (userIdx, productIdx, conn = pgPool) => {
     }
 
     return new ProductDataDto(productSelectResult.rows[0]);
-};
-
-/**
- *
- * @param {number} productIdx
- * @param {pg.PoolClient} conn
- * @returns {Promise<Array<{
- *      month: Date,
- *      events: Array<{
- *          companyIdx: number,
- *          eventIdx: number,
- *          price: string | null
- *      }| null>
- *     }>>
- *
- * }
- */
-const getEventHistoryData = async (productIdx, conn = pgPool) => {
-    const eventInfoSelectResult = await query(
-        `
-            WITH month_array AS (
-                SELECT to_char(date_trunc('month', current_date) - interval '1 month' * series, 'YYYY-MM') AS month
-                FROM generate_series(0, 9) AS series
-            ),
-            event_array AS (
-                SELECT
-                    json_build_object(
-                        'companyIdx', event_history.company_idx,
-                        'eventIdx', event_history.event_idx,
-                        'price', event_history.price
-                    ) AS event_info,
-                    to_char(event_history.start_date, 'YYYY-MM') AS event_month
-                FROM
-                    event_history
-                WHERE
-                    event_history.product_idx = $1
-                    AND event_history.start_date >= (date_trunc('month', current_date) - interval '9 months')
-            ),
-            merge_events AS (
-                SELECT
-                    month_array.month,
-                    json_agg(event_array.event_info) FILTER (WHERE event_array.event_info IS NOT NULL) AS events
-                FROM
-                    month_array
-                LEFT JOIN
-                    event_array ON month_array.month = event_array.event_month
-                GROUP BY
-                    month_array.month
-                ORDER BY
-                    month_array.month DESC
-            )
-            SELECT 
-                month,
-                events
-            FROM 
-                merge_events       
-            `,
-        [productIdx],
-        conn
-    );
-    return eventInfoSelectResult.rows;
 };
 
 /**
@@ -495,8 +434,7 @@ const deleteProductData = async (productIdx) => {
     return;
 };
 module.exports = {
-    getProductData,
-    getEventHistoryData,
+    getProductDataByIdx,
     getProductsData,
     getProductsDataByCompanyIdx,
     getProductsDataBySearch,

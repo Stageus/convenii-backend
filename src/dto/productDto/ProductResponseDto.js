@@ -1,4 +1,4 @@
-class Product {
+class ProductResponseDto {
     /**
      * @type {number}
      */
@@ -7,7 +7,7 @@ class Product {
     /**
      * @type {number}
      */
-    category_idx;
+    categoryIdx;
 
     /**
      * @type {string}
@@ -15,24 +15,24 @@ class Product {
     name;
 
     /**
-     * @type {number}
+     * @type {string}
      */
     price;
 
     /**
      * @type {string}
      */
-    image_url;
+    productImg;
 
     /**
-     * @type {number}
+     * @type {string}
      */
     score;
 
     /**
      * @type {Date}
      */
-    created_at;
+    createdAt;
 
     /**
      * @type {boolean}
@@ -42,25 +42,25 @@ class Product {
     /**
      * @param {{
      *  idx: number;
-     *  category_idx: number;
+     *  categoryIdx: number;
      *  name: string;
-     *  price: number;
-     *  image_url: string;
-     *  score: number;
-     *  created_at: Date;
+     *  price: string;
+     *  productImg: string;
+     *  score: string;
+     *  createdAt: Date;
      *  bookmarked: boolean;
      * }} data
      */
     constructor(data) {
         this.idx = data.idx;
-        this.category_idx = data.category_idx;
+        this.categoryIdx = data.categoryIdx;
         this.name = data.name;
         this.price = data.price;
-        this.image_url = data.image_url;
+        this.productImg = data.productImg;
         this.score = data.score;
-        this.created_at = data.created_at;
+        this.createdAt = data.createdAt;
         this.bookmarked = data.bookmarked;
     }
 }
 
-module.exports = Product;
+module.exports = ProductResponseDto;

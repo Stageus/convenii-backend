@@ -1,20 +1,18 @@
 const query = require("../modules/query");
 const pgPool = require("../modules/pgPool");
+const EventHistoryDataDto = require("../dto/eventDto/EventHistoryDataDto");
+const { NotFoundException } = require("../modules/Exception");
 
 /**
  *
  * @param {number} productIdx
  * @param {pg.PoolClient} conn
  * @returns {Promise<Array<{
- *      month: Date,
- *      events: Array<{
- *          companyIdx: number,
- *          eventIdx: number,
- *          price: string | null
- *      }| null>
+ *      month: string,
+ *      events: Event,
  *     }>>
- *
  * }
+ * @throws {NotFoundException}
  */
 const getEventHistoryData = async (productIdx, conn = pgPool) => {
     const eventInfoSelectResult = await query(
@@ -59,7 +57,10 @@ const getEventHistoryData = async (productIdx, conn = pgPool) => {
         [productIdx],
         conn
     );
-    return eventInfoSelectResult.rows;
+    if (!eventInfoSelectResult.rows.length) {
+        throw new NotFoundException("Cannot find product's eventHistory ");
+    }
+    return EventHistoryDataDto(eventInfoSelectResult.rows);
 };
 
 /**

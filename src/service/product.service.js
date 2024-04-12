@@ -1,14 +1,17 @@
-const CreateProductDto = require("../dto/CreateProductDto");
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductData, getEventHistoryData, getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData } = require("../repository/productRepository");
+const { getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData, getProductDataByProductIdx } = require("../repository/productRepository");
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
 const productEventWrapper = require("../modules/productEventWrapper");
 
 const pgPool = require("../modules/pgPool");
-const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx } = require("../repository/eventRepository");
+const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx, getEventHistoryData } = require("../repository/eventRepository");
 const patternTest = require("../modules/patternTest");
+const ProductBO = require("../bo/ProductBO");
+const EventHistoryBO = require("../bo/EventHistoryBO");
+const ProductResponseDto = require("../dto/productDto/ProductResponseDto");
+const EventHistoryResponseDto = require("../dto/eventDto/EventHistoryResponseDto");
 
 const COMPANY_SIZE = 3;
 /**
@@ -22,21 +25,16 @@ const COMPANY_SIZE = 3;
  */
 const getProductByIdx = async (user, productIdx) => {
     //productData
-    const productData = await getProductData(user.idx, productIdx);
-    const ProductBO
-    const product = productDto.createProduct();
+    const productData = await getProductDataByIdx(user.idx, productIdx);
+    const productBO = new ProductBO(productData);
 
     // eventHistoryData
     const eventHistoryData = await getEventHistoryData(productIdx);
-    if (!eventHistoryData) {
-        throw new NotFoundException("Cannot find product's eventHistory ");
-    }
-
-    //data transfer
+    const eventHistoryBO = new EventHistoryBO(eventHistoryData);
 
     return {
-        product,
-        eventHistory: eventHistoryData.map((data) => new CreateEventHistoryDto(data).createEventHistory()),
+        product: new ProductResponseDto(productBO),
+        eventHistory: new EventHistoryResponseDto(eventHistoryBO),
     };
 };
 

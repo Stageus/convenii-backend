@@ -1,7 +1,16 @@
 const jwt = require("jsonwebtoken");
+const Account = require("../entity/Account");
 
 module.exports = async (req, res, next) => {
     const token = req.headers.authorization;
+    const user = new Account({
+        idx: 0,
+        createdAt: null,
+        email: null,
+        nickname: null,
+        rankIdx: null,
+        isLogin: "false",
+    });
     req.isLogin = "false";
     try {
         if (!token) {

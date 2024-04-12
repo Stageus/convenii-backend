@@ -1,8 +1,4 @@
-class Account {
-    /**
-     * @typedef {"false"|"true"|"expired"} LoginStatus
-     */
-
+class CurrentAccountDto {
     /**
      * @type {number}
      */
@@ -29,10 +25,12 @@ class Account {
     rankIdx;
 
     /**
-     *@type {LoginStatus}
+     *@type {"false"|"true"|"expired"}
      */
     isLogin;
     /**
+     *
+     * @typedef {"false"|"true"|"expired"} LoginStatus
      *
      * @param {{
      *  idx: number;
@@ -40,7 +38,7 @@ class Account {
      *  email: string;
      *  nickname: string;
      *  rankIdx: number;
-     *  isLogin: LoginStatus;
+     *  isLogin: "false"|"true"|"expired";
      * }} data
      */
     constructor(data) {
@@ -52,13 +50,9 @@ class Account {
         this.isLogin = data.isLogin;
     }
 
-    /**
-     *
-     * @returns {LoginStatus}
-     */
-    getLoginStatus() {
-        return this.isLogin;
-    }
+    validate() {}
+
+    toDto() {}
 }
 
 module.exports = Account;

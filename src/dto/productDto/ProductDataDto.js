@@ -1,3 +1,5 @@
+const Product = require("../../entity/Product");
+
 class ProductDataDto {
     /**
      * @type {number}
@@ -40,16 +42,7 @@ class ProductDataDto {
     bookmarked;
 
     /**
-     * @param {{
-     *  idx: number;
-     *  category_idx: number;
-     *  name: string;
-     *  price: string;
-     *  image_url: string;
-     *  score: string;
-     *  created_at: Date;
-     *  bookmarked: boolean;
-     * }} data
+     * @param {Product} data
      */
     constructor(data) {
         this.idx = data.idx;
@@ -61,6 +54,8 @@ class ProductDataDto {
         this.createdAt = data.created_at;
         this.bookmarked = data.bookmarked;
     }
+
+    validate() {}
 }
 
 module.exports = ProductDataDto;
