@@ -1,22 +1,14 @@
 const query = require("../modules/query");
 const pgPool = require("../modules/pgPool");
-const { BadRequestException } = require("../modules/Exception");
+const { BadRequestException, NotFoundException } = require("../modules/Exception");
 const ProductDataDto = require("../dto/productDto/ProductDataDto");
 /**
  * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
  * @param {number} userIdx
  * @param {number} productIdx
  * @param {pg.PoolClient} conn
- * @returns {Promise<{
- *  idx: number;
- *  categoryIdx: number;
- *  name: string;
- *  price: string;
- *  productUrl: string;
- *  score: string;
- *  createdAt: Date;
- *  bookmarked: boolean;
- * }>}
+ * @returns {Promise<ProductDataDto>}
+ * @throws {NotFoundException}
  *
  */
 const getProductData = async (userIdx, productIdx, conn = pgPool) => {
