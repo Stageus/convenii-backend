@@ -5,11 +5,6 @@ class Account {
     idx;
 
     /**
-     * @type {string}
-     */
-    name;
-
-    /**
      * @type {Date}
      */
     createdAt;
@@ -33,7 +28,6 @@ class Account {
      *
      * @param {{
      *  idx: number;
-     *  name: string;
      *  createdAt: Date;
      *  email: string;
      *  nickname: string;
@@ -42,7 +36,6 @@ class Account {
      */
     constructor(data) {
         this.idx = data.idx;
-        this.name = data.name;
         this.createdAt = data.createdAt;
         this.email = data.email;
         this.nickname = data.nickname;
