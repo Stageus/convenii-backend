@@ -1,16 +1,5 @@
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const {
-    getProductDataByIdx,
-    getProductsDataByCompanyIdx,
-    getProductsDataBySearch,
-    postProductData,
-    checkProductExistByIdx,
-    putProductData,
-    deleteProductData,
-    getProductsWithEventsData,
-    getProductsWithEventsDataByCompanyIdx,
-    getProductsWithEventsDataBySearch,
-} = require("../repository/productRepository");
+const { getProductDataByIdx, postProductData, checkProductExistByIdx, putProductData, deleteProductData, getProductsWithEventsData, getProductsWithEventsDataByCompanyIdx, getProductsWithEventsDataBySearch } = require("../repository/productRepository");
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
