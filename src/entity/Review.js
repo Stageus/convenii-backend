@@ -7,7 +7,7 @@ class Review {
     account;
 
     /**
-     * @type {productIdx}
+     * @type {number}
      */
     productIdx;
 
