@@ -24,11 +24,28 @@ class CreateReviewDto {
      *
      */
     score;
+
+    /**
+     * @type {Date}
+     */
+    createdAt;
+
+    /**
+     *
+     * @param {{
+     *  account: Account;
+     *  productIdx: number;
+     *  content: string;
+     *  score: number;
+     *  createdAt: Date;
+     * }} data
+     */
     constructor(data) {
         this.account = data.account;
         this.productIdx = data.productIdx;
         this.content = data.content;
         this.score = data.score;
+        this.createdAt = data.createdAt;
     }
 
     /**
@@ -54,6 +71,7 @@ class CreateReviewDto {
             productIdx: this.productIdx,
             content: this.content,
             score: this.score,
+            createdAt: this.createdAt,
         });
     }
 }

@@ -22,12 +22,18 @@ class Review {
     score;
 
     /**
+     * @type {Date}
+     */
+    createdAt;
+
+    /**
      *
      * @param {{
      *  account: Account;
      *  productIdx: number;
      *  content: string;
      *  score: number;
+     *  createdAt: Date;
      * }} data
      */
     constructor(data) {
@@ -35,6 +41,7 @@ class Review {
         this.productIdx = data.productIdx;
         this.content = data.content;
         this.score = data.score;
+        this.createdAt = data.createdAt;
     }
 }
 
