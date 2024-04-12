@@ -178,8 +178,10 @@ router.post(
 
         const tokenPayload = {
             idx: user.idx,
+            nickname: user.nickname,
             email: user.email,
             rank: user.rank_idx,
+            createdAt: user.createdAt,
         };
 
         const tokenOptions = {
