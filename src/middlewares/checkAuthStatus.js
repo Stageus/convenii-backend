@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const Account = require("../entity/Account");
+const { UnauthorizedException } = require("../modules/Exception");
 
 module.exports = async (req, res, next) => {
     const token = req.headers.authorization;
@@ -11,10 +12,10 @@ module.exports = async (req, res, next) => {
         rankIdx: null,
         isLogin: "false",
     });
-    req.isLogin = "false";
+
     try {
         if (!token) {
-            throw new Error("no token");
+            throw new UnauthorizedException("no token");
         }
 
         jwt.verify(token, process.env.SECRET_KEY);
@@ -22,21 +23,16 @@ module.exports = async (req, res, next) => {
         const payload = token.split(".")[1];
         const convert = Buffer.from(payload, "base64");
         const data = JSON.parse(convert.toString());
-        req.user = data;
-        req.isLogin = "true";
-
+        user.getLoginStatus(data);
+        req.user = user;
         next();
     } catch (error) {
-        req.user = {
-            idx: 0,
-            email: null,
-            rank: null,
-        };
         if (error.message === "jwt expired") {
-            req.isLogin = "expired";
+            user.isExpired();
+            req.user = user;
             next();
         } else if (error.message === "no token") {
-            req.isLogin = "false";
+            req.user = user;
             next();
         } else {
             res.status(401).send(error);

@@ -53,11 +53,27 @@ class Account {
     }
 
     /**
-     *
-     * @returns {LoginStatus}
+     * @param {
+     *  idx: number;
+     *  createdAt: Date;
+     *  email: string;
+     *  nickname: string;
+     *  rankIdx: number;
+     *  isLogin: LoginStatus;
+     * }
+     * @returns {void}
      */
-    getLoginStatus() {
-        return this.isLogin;
+    getLoginStatus(data) {
+        this.idx = data.idx;
+        this.createdAt = data.createdAt;
+        this.email = data.email;
+        this.nickname = data.nickname;
+        this.rankIdx = data.rankIdx;
+        this.isLogin = "true";
+    }
+
+    isExpired() {
+        this.isLogin = "expired";
     }
 }
 
