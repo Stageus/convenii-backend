@@ -60,7 +60,7 @@ const getEventHistoryData = async (productIdx, conn = pgPool) => {
     if (!eventInfoSelectResult.rows.length) {
         throw new NotFoundException("Cannot find product's eventHistory ");
     }
-    return EventHistoryDataDto(eventInfoSelectResult.rows);
+    return new EventHistoryDataDto(eventInfoSelectResult.rows);
 };
 
 /**

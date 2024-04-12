@@ -1,5 +1,5 @@
 const CreateEventHistoryDto = require("../dto/CreateEventHistoryDto");
-const { getProductsData, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData, getProductDataByProductIdx } = require("../repository/productRepository");
+const { getProductDataByIdx, getProductsDataByCompanyIdx, getProductsDataBySearch, postProductData, checkProductExistByIdx, putProductData, deleteProductData } = require("../repository/productRepository");
 const { NotFoundException, BadRequestException, ServerError } = require("../modules/Exception");
 const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
@@ -12,6 +12,7 @@ const ProductBO = require("../bo/ProductBO");
 const EventHistoryBO = require("../bo/EventHistoryBO");
 const ProductResponseDto = require("../dto/productDto/ProductResponseDto");
 const EventHistoryResponseDto = require("../dto/eventDto/EventHistoryResponseDto");
+const Account = require("../entity/Account");
 
 const COMPANY_SIZE = 3;
 /**
@@ -30,11 +31,12 @@ const getProductByIdx = async (user, productIdx) => {
 
     // eventHistoryData
     const eventHistoryData = await getEventHistoryData(productIdx);
+    console.log(eventHistoryData);
     const eventHistoryBO = new EventHistoryBO(eventHistoryData);
 
     return {
         product: new ProductResponseDto(productBO),
-        eventHistory: new EventHistoryResponseDto(eventHistoryBO),
+        eventHistory: new EventHistoryResponseDto(eventHistoryBO).spread(),
     };
 };
 

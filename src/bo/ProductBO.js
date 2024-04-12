@@ -1,3 +1,4 @@
+const { BadRequestException } = require("../modules/Exception");
 const patternTest = require("../modules/patternTest");
 
 class ProductBO {

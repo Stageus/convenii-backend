@@ -2,6 +2,7 @@ const query = require("../modules/query");
 const pgPool = require("../modules/pgPool");
 const { BadRequestException, NotFoundException } = require("../modules/Exception");
 const ProductDataDto = require("../dto/productDto/ProductDataDto");
+const ProductsWithEventsDataDto = require("../dto/productDto/ProductsWithEventsDataDto");
 /**
  * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
  * @param {number} userIdx
@@ -72,17 +73,17 @@ const getProductDataByIdx = async (userIdx, productIdx, conn = pgPool) => {
  *   }>
  * }
  */
-const getProductsData = async (userIdx, page, pageSizeOption, conn = pgPool) => {
-    const products = await query(
+const getProductsWithEventsData = async (userIdx, page, pageSizeOption, conn = pgPool) => {
+    const productsSelectResult = await query(
         `
             SELECT
                 product.idx,
-                product.category_idx AS "categoryIdx",
+                product.category_idx,
                 product.name,
                 product.price,
-                product.image_url AS "productImg",
+                product.image_url,
                 product.score,
-                product.created_at AS "createdAt",
+                product.created_at,
                 (
                     SELECT
                         bookmark.idx
@@ -98,7 +99,7 @@ const getProductsData = async (userIdx, page, pageSizeOption, conn = pgPool) => 
                     SELECT
                         json_build_object(
                             'companyIdx', event_history.company_idx,
-                            'eventType', event_history.event_idx,
+                            'eventIdx', event_history.event_idx,
                             'price', price
                         )
                     FROM
@@ -123,7 +124,10 @@ const getProductsData = async (userIdx, page, pageSizeOption, conn = pgPool) => 
         [userIdx, pageSizeOption, (parseInt(page) - 1) * pageSizeOption],
         conn
     );
-    return products.rows;
+    if (!productsSelectResult.rows.length) {
+        throw new NotFoundException("cannot find products");
+    }
+    return new ProductsWithEventsDataDto(productsSelectResult.rows);
 };
 
 /**
@@ -435,7 +439,7 @@ const deleteProductData = async (productIdx) => {
 };
 module.exports = {
     getProductDataByIdx,
-    getProductsData,
+    getProductsWithEventsData,
     getProductsDataByCompanyIdx,
     getProductsDataBySearch,
     postProductData,

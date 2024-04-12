@@ -18,13 +18,14 @@ class EventHistoryBO {
      * }>} data
      */
     constructor(data) {
-        this.eventHistory = data.map((item) => ({
+        this.eventHistory = data.eventHistory.map((item) => ({
             month: item.month,
-            events: item.events.map((event) => ({
-                companyIdx: event.companyIdx,
-                eventIdx: event.eventIdx,
-                price: event.price,
-            })),
+            events:
+                item.events?.map((event) => ({
+                    companyIdx: event.companyIdx,
+                    eventIdx: event.eventIdx,
+                    price: event.price,
+                })) || null,
         }));
     }
 }
