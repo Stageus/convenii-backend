@@ -20,8 +20,8 @@ const COMPANY_SIZE = 3;
  * @param {Account} user
  * @param {number} productIdx
  * @returns { Promise<
- *      Product,
- *      EventHistory
+ *      ProductResponseDto,
+ *      EventHistoryResponseDto
  * >}
  */
 const getProductByIdx = async (user, productIdx) => {
@@ -52,10 +52,6 @@ const getProductByIdx = async (user, productIdx) => {
  */
 const getProductAll = async (user, page) => {
     const pageSizeOption = 10;
-    if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
-        throw new BadRequestException("page 입력 오류");
-    }
-
     const productsData = await getProductsData(user.idx, page, pageSizeOption);
     if (!productsData) {
         throw new BadRequestException("Cannot find products");
