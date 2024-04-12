@@ -10,10 +10,17 @@ const pgPool = require("../modules/pgPool");
 const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx } = require("../repository/eventRepository");
 const patternTest = require("../modules/patternTest");
 
+class LoginUser {
+    /**
+     * @type {number}
+     */
+    idx;
+}
+
 const COMPANY_SIZE = 3;
 /**
  *
- * @param {req.user} user
+ * @param {LoginUser} user
  * @param {number} productIdx
  * @returns { Promise<
  *      Product,
@@ -37,15 +44,10 @@ const getProductByIdx = async (user, productIdx) => {
     }
 
     //data transfer
-    const eventHistory = [];
-    eventHistoryData.forEach((data) => {
-        const eventHistoryDto = new CreateEventHistoryDto(data);
-        eventHistory.push(eventHistoryDto.createEventHistory());
-    });
 
     return {
         product,
-        eventHistory,
+        eventHistory: eventHistoryData.map((data) => new CreateEventHistoryDto(data).createEventHistory()),
     };
 };
 
