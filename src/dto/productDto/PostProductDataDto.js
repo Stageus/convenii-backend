@@ -2,7 +2,7 @@ const Event = require("../../entity/Event");
 const { BadRequestException } = require("../../modules/Exception");
 const patternTest = require("../../modules/patternTest");
 const COMPANY_SIZE = 3;
-class PostProductsWithEventsDataDto {
+class PostProductDataDto {
     /**
      * @type {number}
      */
@@ -14,47 +14,38 @@ class PostProductsWithEventsDataDto {
     name;
 
     /**
-     * @type {Array<number>}
+     * @type {string}
      */
-    companyIdxArray;
+    price;
 
     /**
-     * @type {Array<number>}
+     * @type {string}
      */
-    eventIdxArray;
-
-    /**
-     * @type {Array<string>}
-     */
-    eventPrice;
+    productImg;
 
     /**
      *
      * @param {
      *  categoryIdx: number,
-     *  name: string,
-     *  events:Array<Event>
+     *  name string,
+     *  price: string,
+     *  productImg: string,
      * } data
+     *
+     * @throws {BadRequestException}
      */
     constructor(data) {
         this.categoryIdx = data.categoryIdx;
         this.name = data.name;
-        this.companyIdxArray = [];
-        this.eventIdxArray = [];
-        this.eventPriceArray = [];
-        data.events.forEach((event) => {
-            if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
-                companyIdxArray.push(event.companyIdx);
-                eventIdxArray.push(event.eventIdx);
-                if (!event.eventPrice) {
-                    event.eventPrice = null;
-                }
-                eventPriceArray.push(event.eventPrice);
-            }
-        });
+        this.price = data.price;
+        this.productImg = data.productImg;
+
         this.validtate();
     }
 
+    /**
+     * @throws {BadRequestException}
+     */
     validtate() {
         if (!patternTest("idx", this.categoryIdx)) {
             throw new BadRequestException("categoryIdx error");
@@ -65,10 +56,7 @@ class PostProductsWithEventsDataDto {
         if (!patternTest("price", this.price)) {
             throw new BadRequestException("price error");
         }
-        if (this.companyIdxArray.length === 0) {
-            throw new BadRequestException("event error");
-        }
     }
 }
 
-module.exports = PostProductsWithEventsDataDto;
+module.exports = PostProductDataDto;
