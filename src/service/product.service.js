@@ -182,6 +182,16 @@ const postProduct = async (categoryIdx, name, price, eventInfo, file) => {
     return;
 };
 
+/**
+ *
+ * @param {number} productIdx
+ * @param {number} categoryIdx
+ * @param {string} name
+ * @param {string} price
+ * @param {Array} eventInfo
+ * @param {req.file} file
+ * @returns {Promise<void>}
+ */
 const putProduct = async (productIdx, categoryIdx, name, price, eventInfo, file) => {
     const companyIdxArray = [];
     const eventIdxArray = [];
@@ -218,4 +228,4 @@ const putProduct = async (productIdx, categoryIdx, name, price, eventInfo, file)
     }
     return;
 };
-module.exports = { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct };
+module.exports = { getProductByIdx, getProductAll, getProductsByCompanyIdx, getProductsBySearch, postProduct, putProduct };
