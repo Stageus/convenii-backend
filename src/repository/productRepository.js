@@ -403,16 +403,18 @@ const getProductsDataBySearch = async (userIdx, keyword, categoryFilter, eventFi
  * @param {number} categoryIdx
  * @param {string} name
  * @param {number} price
- * @param {string} imageUrl
+ * @param {req.file} file
  * @param {Array<number>} companyIdxArray
  * @param {Array<number>} eventIdxArray
  * @param {Array<number|null>} eventPriceArray
- * @returns {boolean}
+ * @returns {Promise<boolean>}
  */
-const postProductData = async (categoryIdx, name, price, imageUrl, companyIdxArray, eventIdxArray, eventPriceArray) => {
+const postProductData = async (categoryIdx, name, price, file, companyIdxArray, eventIdxArray, eventPriceArray) => {
     const client = await pgPool.connect();
     let postSuccess = true;
+    const imageUrl = file.location;
     try {
+        await client.query("BEGIN");
         const newProduct = await query(
             `
             INSERT INTO product (category_idx, name, price, image_url)
@@ -438,14 +440,111 @@ const postProductData = async (categoryIdx, name, price, imageUrl, companyIdxArr
             [newProductIdx, companyIdxArray, eventIdxArray, eventPriceArray],
             client
         );
+        await client.query("COMMIT");
     } catch (err) {
         await client.query("ROLLBACK");
         postSuccess = false;
     } finally {
-        await client.release();
+        client.release();
         return postSuccess;
     }
 };
+
+/**
+ *
+ * @param {number} productIdx
+ * @returns {Promise<boolean>}
+ */
+const checkProductExistByIdx = async (productIdx) => {
+    const productExistenceCheck = await query(
+        `
+            SELECT idx
+            FROM product
+            WHERE idx = $1
+        `,
+        [productIdx]
+    );
+
+    // 존재하지 않는 productIdx인 경우
+    if (productExistenceCheck.rows.length === 0) {
+        return false;
+    }
+    return true;
+};
+/**
+ *
+ * @param {number} productIdx
+ * @param {number} categoryIdx
+ * @param {string} name
+ * @param {number} price
+ * @param {req.file} file
+ * @param {Array<number>} companyIdxArray
+ * @param {Array<number>} eventIdxArray
+ * @param {Array<number|null>} eventPriceArray
+ * @returns {Promise<boolean>}
+ */
+const putProductData = async (productIdx, categoryIdx, name, price, file, companyIdxArray, eventIdxArray, eventPriceArray) => {
+    const imageUrl = file ? file.location : null;
+    const updateParams = [categoryIdx, name, price, productIdx];
+    if (file) {
+        updateParams.push(imageUrl);
+    }
+    const client = await pgPool.connect();
+    let putSuccess = true;
+    try {
+        await client.query("BEGIN");
+
+        // product update
+        await client.query(
+            `
+                UPDATE
+                    product
+                SET
+                    category_idx = $1,
+                    name = $2,
+                    price = $3
+                    ${imageUrl ? ", image_url = $5" : ""}
+                WHERE
+                    idx = $4            
+                `,
+            updateParams
+        );
+
+        // 헹사 update (깉은 월 행사 삭제)
+        await client.query(
+            `
+                DELETE
+                FROM
+                    event_history
+                WHERE
+                    product_idx = $1
+                    AND start_date >= date_trunc('month', current_date)
+                    AND start_date < date_trunc('month', current_date) + interval '1 month'                
+                `,
+            [productIdx]
+        );
+
+        // 행사 삽입
+        await client.query(
+            `
+            INSERT INTO event_history
+                (start_date, product_idx, company_idx, event_idx, price )
+            VALUES
+                (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
+            `,
+            [productIdx, companyIdxArray, eventIdxArray, eventPriceArray]
+        );
+
+        await client.query("COMMIT");
+    } catch (err) {
+        await client.query("ROLLBACK");
+        putSuccess = false;
+    } finally {
+        client.release();
+        return putSuccess;
+    }
+};
+
 module.exports = {
     getProductData,
     getEventHistoryData,
@@ -453,4 +552,6 @@ module.exports = {
     getProductsDataByCompanyIdx,
     getProductsDataBySearch,
     postProductData,
+    checkProductExistByIdx,
+    putProductData,
 };
