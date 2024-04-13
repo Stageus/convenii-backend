@@ -9,8 +9,9 @@ const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductsAllResponseDto = require("./dto/responseDto/productsAllResponseDto");
-const { getProductsAll, getProductsByCompany } = require("./product.service");
+const { getProductsAll, getProductsByCompany, getProductsBySearch } = require("./product.service");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
+const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -30,7 +31,6 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
         const productList = await getProductsAll(GetProductsDto.createDto(user, req.query));
-
         res.status(200).send(ProductsAllResponseDto.create(productList, user));
     })
 );
@@ -51,25 +51,9 @@ router.get(
     "/search",
     checkAuthStatus,
     wrapper(async (req, res, next) => {
-        let { keyword, categoryFilter, eventFilter, page } = req.query;
         const user = req.user;
-        const pageSizeOption = 10;
-        if (!patternTest("keyword", keyword)) {
-            throw new BadRequestException("keyword 입력 오류");
-        }
-        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
-            throw new BadRequestException("page 입력 오류");
-        }
-        if (!eventFilter) {
-            eventFilter = [1, 2, 3, 4, 5, 6];
-        }
-        if (!categoryFilter) {
-            categoryFilter = [1, 2, 3, 4, 5, 6];
-        }
-        res.status(200).send({
-            data: await getProductsWithEventsBySearch(user, keyword, categoryFilter, eventFilter, page, pageSizeOption),
-            authStatus: user.isLogin,
-        });
+        const productList = await getProductsBySearch(GetProductsBySearchDto.createDto(user, req.query));
+        res.status(200).send(ProductsAllResponseDto.create(productList, user));
     })
 );
 
