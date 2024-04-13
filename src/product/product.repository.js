@@ -325,7 +325,7 @@ const selectProductByIdx = async (getProductByIdx, conn = pgPool) => {
     if (!selectResult.rows.length) {
         throw new NotFoundException("cannot find products");
     }
-    return selectResult.rows[0];
+    return selectResult.rows;
 };
 
 module.exports = {

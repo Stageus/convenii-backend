@@ -1,7 +1,7 @@
 const Account = require("../../../util/module/Account");
 const ProductEntity = require("../../entity/ProductEntity");
 
-class ProductsAllResponseDto {
+class ProductResponseDto {
     /**
      * @typedef {"false"|"true"|"expired"} LoginStatus
      */
@@ -34,11 +34,29 @@ class ProductsAllResponseDto {
      * @param {Account} user
      */
     static create(productList, user) {
-        return new ProductsAllResponseDto({
+        return new ProductResponseDto({
             data: productList,
             authStatus: user.authStatus,
         });
     }
+
+    product() {
+        return {
+            data: {
+                product: this.data,
+            },
+
+            authstatus: this.authStatus,
+        };
+    }
+    products() {
+        return {
+            data: {
+                productList: this.data,
+            },
+            authstatus: this.authStatus,
+        };
+    }
 }
 
-module.exports = ProductsAllResponseDto;
+module.exports = ProductResponseDto;

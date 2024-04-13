@@ -15,9 +15,7 @@ const { selectProducts, selectProductsByCompany, selectProductsBySearch, selectP
 const getProductsAll = async (getProductsDto) => {
     const productList = await selectProducts(getProductsDto);
 
-    return {
-        productList: productList.map((product) => ProductEntity.createEntityFromDao(product)),
-    };
+    return productList.map((product) => ProductEntity.createEntityFromDao(product));
 };
 
 /**
@@ -29,9 +27,7 @@ const getProductsAll = async (getProductsDto) => {
  */
 const getProductsByCompany = async (getProductsByCompanyDto) => {
     const productList = await selectProductsByCompany(getProductsByCompanyDto);
-    return {
-        productList: productList.map((product) => ProductEntity.createEntityFromDao(product)),
-    };
+    return productList.map((product) => ProductEntity.createEntityFromDao(product));
 };
 
 /**
@@ -43,9 +39,7 @@ const getProductsByCompany = async (getProductsByCompanyDto) => {
  */
 const getProductsBySearch = async (getProductsBySearchDto) => {
     const productList = await selectProductsBySearch(getProductsBySearchDto);
-    return {
-        productList: productList.map((product) => ProductEntity.createEntityFromDao(product)),
-    };
+    return productList.map((product) => ProductEntity.createEntityFromDao(product));
 };
 
 /**
@@ -56,10 +50,9 @@ const getProductsBySearch = async (getProductsBySearchDto) => {
  * }}
  */
 const getProductByIdx = async (getProductByIdxDto) => {
-    const product = await selectProductByIdx(getProductByIdxDto);
-    return {
-        productList: ProductEntity.createEntityFromDao(product),
-    };
+    const productList = await selectProductByIdx(getProductByIdxDto);
+
+    return productList.map((product) => ProductEntity.createEntityFromDao(product));
 };
 
 module.exports = {

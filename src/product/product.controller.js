@@ -8,7 +8,7 @@ const uploadImg = require("../util/middleware/uploadImg");
 const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
 const GetProductsDto = require("./dto/GetProductsDto");
-const ProductsAllResponseDto = require("./dto/responseDto/productsAllResponseDto");
+const ProductResponseDto = require("./dto/responseDto/ProductResponseDto");
 const { getProductsAll, getProductsByCompany, getProductsBySearch, getProductByIdx } = require("./product.service");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
@@ -32,7 +32,7 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
         const productList = await getProductsAll(GetProductsDto.createDto(user, req.query));
-        res.status(200).send(ProductsAllResponseDto.create(productList, user));
+        res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );
 
@@ -43,7 +43,7 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
         const productList = await getProductsByCompany(GetProductsByCompanyDto.createDto(user, req.query, req.params));
-        res.status(200).send(ProductsAllResponseDto.create(productList, user));
+        res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );
 
@@ -54,7 +54,7 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
         const productList = await getProductsBySearch(GetProductsBySearchDto.createDto(user, req.query));
-        res.status(200).send(ProductsAllResponseDto.create(productList, user));
+        res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );
 
@@ -65,7 +65,7 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
         const productList = await getProductByIdx(GetProductByIdxDto.createDto(user, req.params));
-        res.status(200).send(ProductsAllResponseDto.create(productList, user));
+        res.status(200).send(ProductResponseDto.create(productList, user).product());
     })
 );
 //상품 추가하기
