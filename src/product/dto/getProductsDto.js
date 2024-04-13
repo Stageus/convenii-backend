@@ -43,7 +43,7 @@ class GetProductsDto {
      * }} query
      * @returns {GetProductsDto}
      */
-    static createGetProductsDto(user, query) {
+    static createDto(user, query) {
         validate(query.name);
         return new GetProductsDto({
             account: user,
