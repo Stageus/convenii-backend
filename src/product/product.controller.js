@@ -1,14 +1,13 @@
 const router = require("express").Router();
 
-const checkCondition = require("../middlewares/checkCondition");
-const loginAuth = require("../middlewares/loginAuth");
-const adminAuth = require("../middlewares/adminAuth");
-const checkAuthStatus = require("../middlewares/checkAuthStatus");
-const uploadImg = require("../middlewares/uploadImg");
-const wrapper = require("../modules/wrapper");
-const { getProductByIdx, postProduct, putProduct, deleteProduct, getProductsWithEvents, getProductsWithEventsByCompanyIdx, getProductsWithEventsBySearch } = require("../service/product.service");
-const patternTest = require("../modules/patternTest");
-const { getProductsWithEventsData } = require("../repository/productRepository");
+const checkCondition = require("../util/middleware/checkCondition");
+const loginAuth = require("..//util/middleware/loginAuth");
+const adminAuth = require("../util/middleware/adminAuth");
+const checkAuthStatus = require("../util/middleware/checkAuthStatus");
+const uploadImg = require("../util/middleware/uploadImg");
+const wrapper = require("../util/module/wrapper");
+const patternTest = require("../util/module/patternTest");
+
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
 //  GET/all                       => 모든 상품 가져오기
@@ -30,7 +29,7 @@ router.get(
         if (!page || !patternTest("page", page)) {
             throw new BadRequestException("page 입력 오류");
         }
-
+        const productsEntity = new getProductsAll(getProductsDto(req.user, req.query));
         res.status(200).send({
             data: await getProductsWithEvents(user, page),
             authStatus: user.isLogin,

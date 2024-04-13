@@ -1,3 +1,8 @@
+/**
+ *
+ * @param {import('express').RequestHandler} requestHandler
+ * @returns {import('express').RequestHandler}
+ */
 const wrapper = (requestHandler) => {
     return async (req, res, next) => {
         try {
