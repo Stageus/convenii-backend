@@ -9,9 +9,10 @@ const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductsAllResponseDto = require("./dto/responseDto/productsAllResponseDto");
-const { getProductsAll, getProductsByCompany, getProductsBySearch } = require("./product.service");
+const { getProductsAll, getProductsByCompany, getProductsBySearch, getProductByIdx } = require("./product.service");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
+const GetProductByIdxDto = require("./dto/GetProductByIdxDto");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -62,13 +63,9 @@ router.get(
     "/:productIdx",
     checkAuthStatus,
     wrapper(async (req, res, next) => {
-        const { productIdx } = req.params;
         const user = req.user;
-
-        res.status(200).send({
-            data: await getProductByIdx(user, productIdx),
-            authStatus: user.isLogin,
-        });
+        const productList = await getProductByIdx(GetProductByIdxDto.createDto(user, req.params));
+        res.status(200).send(ProductsAllResponseDto.create(productList, user));
     })
 );
 //상품 추가하기

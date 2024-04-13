@@ -1,8 +1,9 @@
+const GetProductByIdxDto = require("./dto/GetProductByIdxDto");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductEntity = require("./entity/ProductEntity");
-const { selectProducts, selectProductsByCompany, selectProductsBySearch } = require("./product.repository");
+const { selectProducts, selectProductsByCompany, selectProductsBySearch, selectProductByIdx } = require("./product.repository");
 
 /**
  *
@@ -47,8 +48,23 @@ const getProductsBySearch = async (getProductsBySearchDto) => {
     };
 };
 
+/**
+ *
+ * @param {GetProductByIdxDto} getProductByIdxDto
+ * @returns {Promise<{
+ *  productList: ProductEntity,
+ * }}
+ */
+const getProductByIdx = async (getProductByIdxDto) => {
+    const product = await selectProductByIdx(getProductByIdxDto);
+    return {
+        productList: ProductEntity.createEntityFromDao(product),
+    };
+};
+
 module.exports = {
     getProductsAll,
     getProductsByCompany,
     getProductsBySearch,
+    getProductByIdx,
 };

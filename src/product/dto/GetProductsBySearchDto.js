@@ -82,6 +82,7 @@ class GetProductsBySearchDto {
      *  eventFilter: number[]
      * }} query
      * @returns {GetProductsBySearchDto}
+     * @throws {BadRequestException}
      */
     static createDto(user, query) {
         GetProductsBySearchDto.validate({

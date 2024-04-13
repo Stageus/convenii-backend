@@ -263,8 +263,74 @@ const selectProductsBySearch = async (getProductsBySearchDto, conn = pgPool) => 
     return selectResult.rows;
 };
 
+/**
+ * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
+ * @param {GetProductByIdx} getProductByIdx
+ * @param {pg.PoolClient} conn
+ * @returns {Promise<ProductDataDto>}
+ * @throws {NotFoundException}
+ *
+ */
+const selectProductByIdx = async (getProductByIdx, conn = pgPool) => {
+    const { account, productIdx } = getProductByIdx;
+    const selectResult = await query(
+        `SELECT
+            product.idx,
+            product.category_idx "categoryIdx",
+            product.name,
+            product.price,
+            product.image_url "productImg",
+            product.score,
+            product.created_at "createdAt",
+            (
+                SELECT
+                    bookmark.idx
+                FROM
+                    bookmark
+                WHERE
+                    account_idx = $1
+                AND
+                    product_idx = product.idx
+            ) IS NOT NULL AS "bookmarked",
+            -- 이벤트 정보
+            TO_CHAR(current_date, 'YYYY-MM') AS "month",
+            ARRAY (
+                SELECT
+                    json_build_object(
+                        'companyIdx', event_history.company_idx,
+                        'eventIdx', event_history.event_idx,
+                        'price', price
+                    )
+                FROM
+                    event_history
+                WHERE
+                    event_history.product_idx = product.idx
+                AND
+                    event_history.start_date >= date_trunc('month', current_date)
+                AND
+                    event_history.start_date < date_trunc('month', current_date) + interval '1 month'
+                ORDER BY
+                    event_history.company_idx
+            ) AS events
+        FROM    
+            product
+        WHERE
+            product.deleted_at IS NULL
+        AND
+            product.idx = $2`,
+        [account.idx, productIdx],
+        conn
+    );
+
+    if (!selectResult.rows.length) {
+        throw new NotFoundException("cannot find products");
+    }
+    return selectResult.rows[0];
+};
+
 module.exports = {
     selectProducts,
     selectProductsByCompany,
     selectProductsBySearch,
+    selectProductByIdx,
 };

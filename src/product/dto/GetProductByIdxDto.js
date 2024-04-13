@@ -2,7 +2,7 @@ const Account = require("../../util/module/Account");
 const { BadRequestException } = require("../../util/module/Exception");
 const patternTest = require("../../util/module/patternTest");
 
-class GetProductsDto {
+class GetProductByIdxDto {
     /**
      * @type {Account}
      */
@@ -11,28 +11,27 @@ class GetProductsDto {
     /**
      * @type {number}
      */
-    page;
-
+    productIdx;
     /**
      *
      * @param {{
      *  account: Account,
-     *  page: number
+     *  productIdx: number
      * }} data
      */
     constructor(data) {
         this.account = data.account;
-        this.page = data.page;
+        this.productIdx = data.productIdx;
     }
 
     /**
      *
-     * @param {number} page
+     * @param {number} productIdx
      * @throws {BadRequestException}
      */
-    static validate(page) {
-        if (!patternTest("page", page)) {
-            throw new BadRequestException("page Error");
+    static validate(productIdx) {
+        if (!patternTest("idx", productIdx)) {
+            throw new BadRequestException("productIdx Error");
         }
     }
 
@@ -40,17 +39,17 @@ class GetProductsDto {
      *
      * @param {Account} user
      * @param {{
-     *  page:number
-     * }} query
-     * @returns {GetProductsDto}
+     *  productIdx:number
+     * }} params
+     * @returns {GetProductByIdxDto}
      */
-    static createDto(user, query) {
-        GetProductsDto.validate(query.page);
-        return new GetProductsDto({
+    static createDto(user, params) {
+        GetProductByIdxDto.validate(params.productIdx);
+        return new GetProductByIdxDto({
             account: user,
-            page: query.page,
+            productIdx: params.productIdx,
         });
     }
 }
 
-module.exports = GetProductsDto;
+module.exports = GetProductByIdxDto;
