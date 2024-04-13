@@ -7,6 +7,7 @@ const checkAuthStatus = require("../util/middleware/checkAuthStatus");
 const uploadImg = require("../util/middleware/uploadImg");
 const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
+const GetProductsDto = require("./dto/getProductsDto");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -24,12 +25,7 @@ router.get(
     "/all",
     checkAuthStatus,
     wrapper(async (req, res, next) => {
-        const user = req.user;
-        const { page } = req.query;
-        if (!page || !patternTest("page", page)) {
-            throw new BadRequestException("page 입력 오류");
-        }
-        const productsEntity = new getProductsAll(getProductsDto(req.user, req.query));
+        const productsEntity = new getProductsAll(GetProductsDto.createGetProductsDto(req.user, req.query));
         res.status(200).send({
             data: await getProductsWithEvents(user, page),
             authStatus: user.isLogin,
