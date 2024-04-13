@@ -8,7 +8,7 @@ const patterns = {
     name: /^[가-힣a-zA-Z0-9]{2,40}$/,
     price: /^(?:[1-9][0-9]{2,6}|10000000)$/,
 };
-const { BadRequestException } = require("../modules/Exception");
+const { BadRequestException } = require("../module/Exception");
 
 const checkCondition =
     (input, trim = false) =>
