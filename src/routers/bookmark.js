@@ -3,7 +3,7 @@ const loginAuth = require("../middlewares/loginAuth");
 const pgPool = require("../modules/pgPool");
 const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
-const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
+const { UnauthorizedException, BadRequestException } = require("../modules/Exception");
 
 // 북마크 등록하기
 router.post(
