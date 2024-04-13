@@ -12,8 +12,13 @@ const isLogin = async (req, res, next) => {
         const convert = Buffer.from(payload, "base64");
         const data = JSON.parse(convert.toString());
         req.user = data;
-        next()
+
+        if (req.user.rank !== 2) {
+            throw new Error("권한 없음");
+        }
+        next();
     } catch (error) {
+        let status = 403;
         const message = (() => {
             if (error.message === "no token") {
                 return "토큰이 없음";
@@ -21,11 +26,14 @@ const isLogin = async (req, res, next) => {
                 return "토큰이 끝남";
             } else if (error.message === "invalid token") {
                 return "토큰이 조작됨";
+            } else if (error.message === "권한없음") {
+                status = 401;
+                return error.message;
             } else {
                 return "오류 발생";
             }
         })();
-        res.status(403).send({ message });
+        res.status(status).send({ message });
     }
 };
 
