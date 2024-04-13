@@ -1,7 +1,7 @@
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductEntity = require("./entity/ProductEntity");
 const { selectProducts } = require("./product.repository");
-const PAGESIZEOPTION = 10;
+
 /**
  *
  * @param {GetProductsDto} getProductsDto
@@ -10,7 +10,7 @@ const PAGESIZEOPTION = 10;
  * }}
  */
 const getProductsAll = async (getProductsDto) => {
-    const productList = await selectProducts(getProductsDto, PAGESIZEOPTION);
+    const productList = await selectProducts(getProductsDto);
 
     return {
         productList: productList.map((product) => ProductEntity.createEntityFromDao(product)),

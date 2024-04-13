@@ -3,19 +3,17 @@ const { NotFoundException } = require("../util/module/Exception");
 const query = require("../util/module/query");
 const Product = require("./dao/product.dao");
 const GetProductsDto = require("./dto/GetProductsDto");
-
-/**
+const pageSizeOption = process.env.PAGE_SIZE_OPTION;
 
 /**
  *
  * @param {GetProductsDto} getProductsDto
- * @param {number} pageSizeOption
  * @param {pg.PoolClient} conn
  *
  * @returns {Promise<Product[]>}
  * @throws {NotFoundException}
  */
-const selectProducts = async (getProductsDto, pageSizeOption, conn = pgPool) => {
+const selectProducts = async (getProductsDto, conn = pgPool) => {
     const { page, userIdx } = getProductsDto;
     const selectResult = await query(
         `
