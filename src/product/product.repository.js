@@ -19,12 +19,12 @@ const selectProducts = async (getProductsDto, conn = pgPool) => {
         `
             SELECT
                 product.idx,
-                product.category_idx,
+                product.category_idx "categoryIdx",
                 product.name,
                 product.price,
-                product.image_url,
+                product.image_url "productImg",
                 product.score,
-                product.created_at,
+                product.created_at "createdAt",
                 (
                     SELECT
                         bookmark.idx
