@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": false,
+        "amount": 30
+    },
+    "auditLog": "C:\\Users\\kjykj\\OneDrive\\바탕 화면\\convenii\\logs\\error\\.43d5be803fba41614266f46bb1d9edb2a2fcd585-audit.json",
+    "files": [
+        {
+            "date": 1713023534065,
+            "name": "C:\\Users\\kjykj\\OneDrive\\바탕 화면\\convenii\\logs\\error\\2024-04-14.error.log",
+            "hash": "9423019636fd216cd38e29fe65b2c6dd7ee3a63e831ce3ba23c889fe379cdeb0"
+        }
+    ],
+    "hashType": "sha256"
+}
