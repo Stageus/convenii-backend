@@ -11,32 +11,32 @@ class GetProductsByCompanyDto {
     /**
      * @type {number}
      */
-    page;
+    companyIdx;
 
     /**
      * @type {number}
      */
-    companyIdx;
+    pageLimit;
 
     /**
-     * @type {string}
+     * @type {number}
      */
-    option;
+    pageOffset;
 
     /**
      *
      * @param {{
      *  account: Account,
-     *  page: number,
      *  companyIdx: number,
-     *  option: string
+     *  pageLimit: number,
+     *  pageOffset: number
      * }} data
      */
     constructor(data) {
         this.account = data.account;
-        this.page = data.page;
         this.companyIdx = data.companyIdx;
-        this.string = data.companyIdx;
+        this.pageLimit = data.pageLimit;
+        this.pageOffset = data.pageOffset;
     }
 
     /**
@@ -72,11 +72,12 @@ class GetProductsByCompanyDto {
      */
     static createDto(user, query, params) {
         GetProductsByCompanyDto.validate(query.page, params.companyIdx, query.option);
+
         return new GetProductsByCompanyDto({
             account: user,
-            page: query.page,
             companyIdx: params.companyIdx,
-            option: query.option,
+            pageLimit: query.option === "main" ? process.env.PAGE_SIZE_OPTION : 3,
+            pageOffset: query.option === "main" ? 0 : (parseInt(query.page) - 1) * process.env.PAGE_SIZE_OPTION,
         });
     }
 }

@@ -9,7 +9,8 @@ const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductsAllResponseDto = require("./dto/responseDto/productsAllResponseDto");
-const { getProductsAll } = require("./product.service");
+const { getProductsAll, getProductsByCompany } = require("./product.service");
+const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -39,30 +40,9 @@ router.get(
     "/company/:companyIdx",
     checkAuthStatus,
     wrapper(async (req, res, next) => {
-        const { companyIdx } = req.params;
-        const { page, option } = req.query;
         const user = req.user;
-        let pageSizeOption = 10;
-        let offset = (parseInt(page) - 1) * pageSizeOption;
-        if (!companyIdx || !patternTest("idx", companyIdx) || companyIdx <= 0 || companyIdx > COMPANY_SIZE) {
-            throw new BadRequestException("companyIdx 입력 오류");
-        }
-        if (!page || !patternTest("page", page)) {
-            throw new BadRequestException("page 입력 오류");
-        }
-
-        if (option !== "main" && option !== "all") {
-            throw new BadRequestException("option 입력 오류");
-        }
-        if (option === "main") {
-            pageSizeOption = 3;
-            offset = 0;
-        }
-
-        res.status(200).send({
-            data: await getProductsWithEventsByCompanyIdx(user, companyIdx, pageSizeOption, offset),
-            authStatus: user.isLogin,
-        });
+        const productList = await getProductsByCompany(GetProductsByCompanyDto.createDto(user, req.query, req.params));
+        res.status(200).send(ProductsAllResponseDto.create(productList, user));
     })
 );
 
