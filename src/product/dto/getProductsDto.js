@@ -30,6 +30,7 @@ class GetProductsDto {
      * @param {number} page
      */
     static validate(page) {
+        console.log(page);
         if (!patternTest("page", page)) {
             throw new BadRequestException("page Error");
         }
@@ -44,7 +45,7 @@ class GetProductsDto {
      * @returns {GetProductsDto}
      */
     static createDto(user, query) {
-        validate(query.name);
+        GetProductsDto.validate(query.page);
         return new GetProductsDto({
             account: user,
             page: query.page,

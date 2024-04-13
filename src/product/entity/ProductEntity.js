@@ -84,7 +84,7 @@ class ProductEntity {
      *
      * @param {Product} product
      */
-    static createProductEntityFromDao(product) {
+    static createEntityFromDao(product) {
         return new ProductEntity({
             idx: product.idx,
             categoryIdx: product.categoryIdx,
@@ -94,7 +94,7 @@ class ProductEntity {
             score: product.score,
             createdAt: product.createdAt,
             bookmarked: product.bookmarked,
-            events: product.events.map((event) => createEventEntity(event)),
+            events: product.events.map((event) => EventEntity.createEntity(event)),
         });
     }
 }

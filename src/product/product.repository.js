@@ -1,8 +1,8 @@
-const pgPool = require("../../src_sav/modules/pgPool");
+const pgPool = require("../../src/util/module/pgPool");
 const { NotFoundException } = require("../util/module/Exception");
+const query = require("../util/module/query");
 const Product = require("./dao/product.dao");
 const GetProductsDto = require("./dto/GetProductsDto");
-const { getProductsAll } = require("./product.service");
 
 /**
 
@@ -74,5 +74,5 @@ const selectProducts = async (getProductsDto, pageSizeOption, conn = pgPool) => 
 };
 
 module.exports = {
-    getProductsAll,
+    selectProducts,
 };

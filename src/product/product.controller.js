@@ -9,6 +9,7 @@ const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductsAllResponseDto = require("./dto/responseDto/productsAllResponseDto");
+const { getProductsAll } = require("./product.service");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -26,7 +27,8 @@ router.get(
     "/all",
     checkAuthStatus,
     wrapper(async (req, res, next) => {
-        const productList = new getProductsAll(GetProductsDto.createDto(req.user, req.query));
+        const user = req.user;
+        const productList = await getProductsAll(GetProductsDto.createDto(user, req.query));
 
         res.status(200).send(ProductsAllResponseDto.create(productList, user));
     })

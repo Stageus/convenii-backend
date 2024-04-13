@@ -31,7 +31,7 @@ class EventEntity {
      * @param {Event} event
      * @returns {EventEntity}
      */
-    static createEventEntity(event) {
+    static createEntity(event) {
         return new EventEntity({
             companyIdx: event.companyIdx,
             eventIdx: event.eventIdx,
