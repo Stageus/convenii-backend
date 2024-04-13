@@ -17,6 +17,7 @@ const ProductWithEventsResponseDto = require("../dto/productDto/ProductsWithEven
 const PostProductsWithEventsDataDto = require("../dto/productDto/PostProductDataDto");
 const PostProductDataDto = require("../dto/productDto/PostProductDataDto");
 const PostEventsDataDto = require("../dto/eventDto/PostEventsDataDto");
+const PutProductDataDto = require("../dto/productDto/PutProductDataDto");
 
 const COMPANY_SIZE = 3;
 /**
@@ -132,7 +133,7 @@ const postProduct = async (categoryIdx, name, price, events, file) => {
         await postEventsDataByProductIdx(eventsDataDto, client);
         await client.query("COMMIT");
     } catch (err) {
-        client.query("ROLLBACK");
+        await client.query("ROLLBACK");
         throw err;
     } finally {
         client.release();
@@ -147,52 +148,39 @@ const postProduct = async (categoryIdx, name, price, events, file) => {
  * @param {number} categoryIdx
  * @param {string} name
  * @param {string} price
- * @param {Array} eventInfo
+ * @param {Array<Event>} events
  * @param {req.file} file
  * @returns {Promise<void>}
  */
-const putProduct = async (productIdx, categoryIdx, name, price, eventInfo, file) => {
-    const companyIdxArray = [];
-    const eventIdxArray = [];
-    const eventPriceArray = [];
-    if (typeof categoryIdx !== "string" || parseInt(categoryIdx) < 0) {
-        throw new BadRequestException("categoryIdx 오류");
-    }
-    if (typeof name !== "string" || name.trim().length === 0) {
-        throw new BadRequestException("name 오류");
-    }
-    if (typeof price !== "string" || parseInt(price) <= 0) {
-        throw new BadRequestException("price 오류");
-    }
-    if (eventInfo.length === 0) {
-        throw new BadRequestException("eventInfo 오류");
-    }
-    eventInfo.forEach((event) => {
-        //companyIdx가 없으면 넣지 않는다
-        if (event.companyIdx && event.companyIdx > 0 && event.companyIdx <= COMPANY_SIZE) {
-            companyIdxArray.push(event.companyIdx);
-            eventIdxArray.push(event.eventIdx);
-            if (!event.eventPrice) {
-                event.eventPrice = null;
-            }
-            eventPriceArray.push(event.eventPrice);
-        }
-    });
-
+const putProduct = async (productIdx, categoryIdx, name, price, events, file) => {
     if (!(await checkProductExistByIdx(productIdx))) {
         throw new BadRequestException("productIdx에 해당하는 product가 없음");
+    }
+    let newImg = null;
+    if (typeof file !== "undefined") {
+        newImg = file.location;
     }
     const client = await pgPool.connect();
     try {
         await client.query("BEGIN");
-        await putProductData(productIdx, categoryIdx, name, price, file, client);
-        //현재 행사 삭제하고 다시 넣기
+        //BO to DTo
+        const putProductDataDto = new PutProductDataDto({
+            productIdx: productIdx,
+            categoryIdx: categoryIdx,
+            name: name,
+            price: price,
+            productImg: newImg,
+        });
+        await putProductData(putProductDataDto, client);
         await deleteCurrentMonthEventsByProductIdx(productIdx, client);
-        await postEventsByProductIdx(productIdx, companyIdxArray, eventIdxArray, eventPriceArray, client);
-
+        const eventsDataDto = new PostEventsDataDto({
+            productIdx: productIdx,
+            events: events,
+        });
+        await postEventsDataByProductIdx(eventsDataDto, client);
         await client.query("COMMIT");
     } catch (err) {
-        client.query("ROLLBACK");
+        await client.query("ROLLBACK");
         throw err;
     } finally {
         client.release();

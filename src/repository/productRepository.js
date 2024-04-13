@@ -4,6 +4,7 @@ const { BadRequestException, NotFoundException } = require("../modules/Exception
 const ProductDataDto = require("../dto/productDto/ProductDataDto");
 const ProductsWithEventsDataDto = require("../dto/productDto/ProductsWithEventsDataDto");
 const PostProductDataDto = require("../dto/productDto/PostProductDataDto");
+const PutProductDataDto = require("../dto/productDto/PutProductDataDto");
 /**
  * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
  * @param {number} userIdx
@@ -362,20 +363,12 @@ const checkProductExistByIdx = async (productIdx) => {
 
 /**
  *
- * @param {number} productIdx
- * @param {number} categoryIdx
- * @param {string} name
- * @param {string} price
- * @param {req.file} file
+ * @param {PutProductDataDto} putProductDataDto
  * @param {PoolClient} conn
  * @returns
  */
-const putProductData = async (productIdx, categoryIdx, name, price, file, conn) => {
-    const imageUrl = file ? file.location : null;
-    const updateParams = [categoryIdx, name, price, productIdx];
-    if (file) {
-        updateParams.push(imageUrl);
-    }
+const putProductData = async (putProductDataDto, conn) => {
+    const imgQueryCheck = putProductDataDto.haveImg();
 
     return await query(
         `
@@ -385,15 +378,20 @@ const putProductData = async (productIdx, categoryIdx, name, price, file, conn) 
                 category_idx = $1,
                 name = $2,
                 price = $3
-                ${imageUrl ? ", image_url = $5" : ""}
+                ${imgQueryCheck ? ", image_url = $5" : ""}
             WHERE
                 idx = $4            
         `,
-        updateParams,
+        putProductDataDto.toParams(),
         conn
     );
 };
 
+/**
+ *
+ * @param {number} productIdx
+ * @returns
+ */
 const deleteProductData = async (productIdx) => {
     await query(
         `

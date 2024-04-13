@@ -70,7 +70,8 @@ const getEventHistoryData = async (productIdx, conn = pgPool) => {
  * @param {PoolClient} conn
  * @returns {Promise<QueryResult>}
  */
-const deleteCurrentMonthEventsByProductIdx = async (productIdx, conn) => {
+const deleteCurrentMonthEventsByProductIdx = async (productIdx, conn = pgPool) => {
+    console.log(productIdx);
     return await query(
         `
             DELETE
