@@ -10,7 +10,7 @@ const generateVerificationCode = require("../modules/generateVerificationCode");
 const issueToken = require("../modules/issueToken");
 const wrapper = require("../modules/wrapper");
 const query = require("../modules/query");
-const { Exception, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
+const { UnauthorizedException, NotFoundException, BadRequestException, ForbiddenException } = require("../modules/Exception");
 
 //이메일 인증번호 발급 (비로그인 상태시)
 router.post(
