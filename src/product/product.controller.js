@@ -7,7 +7,8 @@ const checkAuthStatus = require("../util/middleware/checkAuthStatus");
 const uploadImg = require("../util/middleware/uploadImg");
 const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
-const GetProductsDto = require("./dto/getProductsDto");
+const GetProductsDto = require("./dto/GetProductsDto");
+const ProductsAllResponseDto = require("./dto/responseDto/productsAllResponseDto");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -25,11 +26,9 @@ router.get(
     "/all",
     checkAuthStatus,
     wrapper(async (req, res, next) => {
-        const productsEntity = new getProductsAll(GetProductsDto.createGetProductsDto(req.user, req.query));
-        res.status(200).send({
-            data: await getProductsWithEvents(user, page),
-            authStatus: user.isLogin,
-        });
+        const productList = new getProductsAll(GetProductsDto.createDto(req.user, req.query));
+
+        res.status(200).send(ProductsAllResponseDto.create(productList, user));
     })
 );
 

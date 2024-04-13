@@ -2,6 +2,7 @@ const pgPool = require("../../src_sav/modules/pgPool");
 const { NotFoundException } = require("../util/module/Exception");
 const Product = require("./dao/product.dao");
 const GetProductsDto = require("./dto/GetProductsDto");
+const { getProductsAll } = require("./product.service");
 
 /**
 
@@ -70,4 +71,8 @@ const selectProducts = async (getProductsDto, pageSizeOption, conn = pgPool) => 
         throw new NotFoundException("cannot find products");
     }
     return selectResult.rows;
+};
+
+module.exports = {
+    getProductsAll,
 };
