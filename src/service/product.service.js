@@ -5,7 +5,7 @@ const EventHistory = require("../entity/EventHistory");
 const Product = require("../entity/Product");
 
 const pgPool = require("../modules/pgPool");
-const { postEventsByProductIdx, deleteCurrentMonthEventsByProductIdx, getEventHistoryData, postEventsDataByProductIdx } = require("../repository/eventRepository");
+const { deleteCurrentMonthEventsByProductIdx, getEventHistoryData, postEventsDataByProductIdx } = require("../repository/eventRepository");
 const patternTest = require("../modules/patternTest");
 const ProductBO = require("../bo/ProductBO");
 const EventHistoryBO = require("../bo/EventHistoryBO");
@@ -14,7 +14,6 @@ const EventHistoryResponseDto = require("../dto/eventDto/EventHistoryResponseDto
 const Account = require("../entity/Account");
 const ProductsWithEventsBO = require("../bo/ProductsWithEventsBO");
 const ProductWithEventsResponseDto = require("../dto/productDto/ProductsWithEventsResponseDto");
-const PostProductsWithEventsDataDto = require("../dto/productDto/PostProductDataDto");
 const PostProductDataDto = require("../dto/productDto/PostProductDataDto");
 const PostEventsDataDto = require("../dto/eventDto/PostEventsDataDto");
 const PutProductDataDto = require("../dto/productDto/PutProductDataDto");
@@ -172,6 +171,7 @@ const putProduct = async (productIdx, categoryIdx, name, price, events, file) =>
             productImg: newImg,
         });
         await putProductData(putProductDataDto, client);
+
         await deleteCurrentMonthEventsByProductIdx(productIdx, client);
         const eventsDataDto = new PostEventsDataDto({
             productIdx: productIdx,
