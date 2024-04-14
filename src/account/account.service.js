@@ -2,7 +2,7 @@ const AccountEntity = require("./entity/accountEntity");
 
 /**
  *
- * @param {string} token
+ * @param {string|null} token
  * @returns {Promise<AccountEntity>}
  */
 const checkLogin = (token) => {
