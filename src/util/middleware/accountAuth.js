@@ -11,7 +11,7 @@ const accountAuth =
     async (req, res, next) => {
         const token = req.headers.authorization;
         const user = await checkLogin(token);
-        if (user.rankIdx !== needRank) {
+        if (user.rankIdx < needRank) {
             let message = "No permission";
             if (user.authStatus === "expired") {
                 message = "token expired";
