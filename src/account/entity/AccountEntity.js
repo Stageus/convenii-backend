@@ -96,7 +96,7 @@ class AccountEntity {
      */
     updateFromToken(token) {
         if (!token) {
-            throw new UnauthorizedException("no token");
+            return;
         }
         try {
             jwt.verify(token, process.env.SECRET_KEY);
