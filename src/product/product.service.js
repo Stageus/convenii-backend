@@ -1,9 +1,11 @@
+const { NotFoundException } = require("../util/module/Exception");
+const CreateProductDto = require("./dto/CreateProductDto");
 const GetProductByIdxDto = require("./dto/GetProductByIdxDto");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductEntity = require("./entity/ProductEntity");
-const { selectProducts, selectProductsByCompany, selectProductsBySearch, selectProductByIdx } = require("./product.repository");
+const { selectProducts, selectProductByIdx } = require("./product.repository");
 
 /**
  *
@@ -14,6 +16,10 @@ const { selectProducts, selectProductsByCompany, selectProductsBySearch, selectP
  */
 const getProductsAll = async (getProductsDto) => {
     const productList = await selectProducts(getProductsDto);
+
+    if (productList.length === 0) {
+        throw NotFoundException("no products");
+    }
 
     return productList.map((product) => ProductEntity.createEntityFromDao(product));
 };
@@ -26,7 +32,12 @@ const getProductsAll = async (getProductsDto) => {
  * }}
  */
 const getProductsByCompany = async (getProductsByCompanyDto) => {
-    const productList = await selectProductsByCompany(getProductsByCompanyDto);
+    const productList = await selectProducts(getProductsByCompanyDto);
+
+    if (productList.length === 0) {
+        throw NotFoundException("no products");
+    }
+
     return productList.map((product) => ProductEntity.createEntityFromDao(product));
 };
 
@@ -38,23 +49,31 @@ const getProductsByCompany = async (getProductsByCompanyDto) => {
  * }}
  */
 const getProductsBySearch = async (getProductsBySearchDto) => {
-    const productList = await selectProductsBySearch(getProductsBySearchDto);
+    const productList = await selectProducts(getProductsBySearchDto);
+
+    if (productList.length === 0) {
+        throw NotFoundException("no products");
+    }
+
     return productList.map((product) => ProductEntity.createEntityFromDao(product));
 };
 
 /**
  *
  * @param {GetProductByIdxDto} getProductByIdxDto
- * @returns {Promise<{
- *  productList: ProductEntity,
- * }}
+ * @returns {Promise<ProductEntity>}
  */
-const getProductByIdx = async (getProductByIdxDto) => {
-    const productList = await selectProductByIdx(getProductByIdxDto);
+const getProductByIdx = async (getProductByIdxDto, selectProductByIdx = selectProductByIdx) => {
+    const product = await selectProductByIdx(getProductByIdxDto);
 
-    return productList.map((product) => ProductEntity.createEntityFromDao(product));
+    if (!product) {
+        throw new NotFoundException("Cannot find proudct");
+    }
+
+    return ProductEntity.createEntityFromDao(product);
 };
 
+const createProduct = async (createProductDto) => {};
 module.exports = {
     getProductsAll,
     getProductsByCompany,
