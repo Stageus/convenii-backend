@@ -126,8 +126,6 @@ const selectProducts = async (selectProductsAllDao, conn = pgPool) => {
         [selectProductsAllDao.accountIdx, selectProductsAllDao.limit, selectProductsAllDao.offset, "%" + selectProductsAllDao.keyword + "%", selectProductsAllDao.categoryFilter, selectProductsAllDao.eventFilter],
         conn
     );
-    console.log(selectProductsAllDao);
-    console.log(queryResult.rows[0]);
     return queryResult.rows;
 };
 
