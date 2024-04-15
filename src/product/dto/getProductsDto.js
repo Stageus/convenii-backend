@@ -11,23 +11,51 @@ class GetProductsDto {
     /**
      * @type {number}
      */
-    page;
+    limit;
+
+    /**
+     * @type {number}
+     */
+    offset;
+
+    /**
+     * @type {string}
+     */
+    keyword;
+
+    /**
+     * @type {number[]}
+     */
+    categoryFilter;
+
+    /**
+     * @type {number[]}
+     */
+    eventFilter;
 
     /**
      *
      * @param {{
      *  account: Account,
-     *  page: number
+     *  limit: number,
+     *  offset: number,
+     *  keyword: string,
+     *  categoryFilter: number[],
+     *  eventFilter: number[],
      * }} data
      */
     constructor(data) {
         this.account = data.account;
-        this.page = data.page;
+        this.limit = data.limit;
+        this.offset = data.offset;
+        this.keyword = data.keyword;
+        this.categoryFilter = data.categoryFilter;
+        this.eventFilter = data.eventFilter;
     }
 
     /**
      *
-     * @param {number} page
+     * @param {number} categoryFilter
      * @throws {BadRequestException}
      */
     static validate(page) {
@@ -48,7 +76,11 @@ class GetProductsDto {
         GetProductsDto.validate(query.page);
         return new GetProductsDto({
             account: user,
-            page: query.page,
+            limit: 10,
+            offset: (query.page - 1) * 10,
+            keyword: "",
+            categoryFilter: [1, 2, 3, 4, 5, 6],
+            eventFilter: [1, 2, 3, 4, 5, 6],
         });
     }
 }

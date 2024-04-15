@@ -16,27 +16,48 @@ class GetProductsByCompanyDto {
     /**
      * @type {number}
      */
-    pageLimit;
+    limit;
 
     /**
      * @type {number}
      */
-    pageOffset;
+    offset;
+
+    /**
+     * @type {string}
+     */
+    keyword;
+
+    /**
+     * @type {number[]}
+     */
+    categoryFilter;
+
+    /**
+     * @type {number[]}
+     */
+    eventFilter;
 
     /**
      *
      * @param {{
      *  account: Account,
      *  companyIdx: number,
-     *  pageLimit: number,
-     *  pageOffset: number
+     *  limit: number,
+     *  offset: number,
+     *  keyword: string,
+     *  categoryFilter: number[],
+     *  eventFilter: number[],
      * }} data
      */
     constructor(data) {
         this.account = data.account;
         this.companyIdx = data.companyIdx;
-        this.pageLimit = data.pageLimit;
-        this.pageOffset = data.pageOffset;
+        this.limit = data.limit;
+        this.offset = data.offset;
+        this.keyword = data.keyword;
+        this.categoryFilter = data.categoryFilter;
+        this.eventFilter = data.eventFilter;
     }
 
     /**
@@ -76,8 +97,11 @@ class GetProductsByCompanyDto {
         return new GetProductsByCompanyDto({
             account: user,
             companyIdx: params.companyIdx,
-            pageLimit: query.option === "main" ? process.env.PAGE_SIZE_OPTION : 3,
-            pageOffset: query.option === "main" ? 0 : (parseInt(query.page) - 1) * process.env.PAGE_SIZE_OPTION,
+            limit: query.option === "main" ? process.env.PAGE_SIZE_OPTION : 3,
+            offset: query.option === "main" ? 0 : (parseInt(query.page) - 1) * process.env.PAGE_SIZE_OPTION,
+            keyword: "",
+            categoryFilter: [1, 2, 3, 4, 5, 6],
+            eventFilter: [1, 2, 3, 4, 5, 6],
         });
     }
 }

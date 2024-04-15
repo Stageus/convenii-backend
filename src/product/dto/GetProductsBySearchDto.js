@@ -9,6 +9,16 @@ class GetProductsBySearchDto {
     account;
 
     /**
+     * @type {number}
+     */
+    limit;
+
+    /**
+     * @type {number}
+     */
+    offset;
+
+    /**
      * @type {string}
      */
     keyword;
@@ -24,26 +34,23 @@ class GetProductsBySearchDto {
     eventFilter;
 
     /**
-     * @type {number}
-     */
-    pageOffset;
-
-    /**
      *
      * @param {{
      *  account: Account,
+     *  limit: number,
+     *  offset: number,
      *  keyword: string,
      *  categoryFilter: number[],
      *  eventFilter: number[],
-     *  pageOffset: number
      * }} data
      */
     constructor(data) {
         this.account = data.account;
+        this.limit = data.limit;
+        this.offset = data.offset;
         this.keyword = data.keyword;
         this.categoryFilter = data.categoryFilter;
         this.eventFilter = data.eventFilter;
-        this.pageOffset = data.pageOffset;
     }
 
     /**
@@ -64,12 +71,6 @@ class GetProductsBySearchDto {
         if (!patternTest("keyword", keyword)) {
             throw new BadRequestException("keyword error");
         }
-        // if (!(eventFilter.length === 0 || eventFilter.every(Number.isInteger))) {
-        //     throw new BadRequestException("eventFilter error");
-        // }
-        // if (!(categoryFilter.length === 0 || categoryFilter.every(Number.isInteger))) {
-        //     throw new BadRequestException("eventFilter error");
-        // }
     }
 
     /**
@@ -95,9 +96,10 @@ class GetProductsBySearchDto {
         return new GetProductsBySearchDto({
             account: user,
             keyword: query.keyword,
+            limit: 10,
+            offset: (query.page - 1) * 10,
             categoryFilter: !query.categoryFilter ? [1, 2, 3, 4, 5, 6] : query.categoryFilter,
             eventFilter: !query.eventFilter ? [1, 2, 3, 4, 5, 6] : query.eventFilter,
-            pageOffset: (parseInt(query.page) - 1) * process.env.PAGE_SIZE_OPTION,
         });
     }
 }
