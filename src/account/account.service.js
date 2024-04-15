@@ -1,13 +1,16 @@
+const CheckLoginDto = require("./dto/CheckLoginDto");
 const AccountEntity = require("./entity/accountEntity");
 
 /**
  *
- * @param {string|null} token
+ * @param {CheckLoginDto} checkLoginDto
  * @returns {Promise<AccountEntity>}
  */
-const checkLogin = (token) => {
+const checkLogin = (checkLoginDto) => {
+    const { token, needRank } = checkLoginDto;
     const user = AccountEntity.createEntity();
     user.updateFromToken(token);
+    user.checkPermission(needRank);
     return user;
 };
 

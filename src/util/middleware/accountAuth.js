@@ -1,25 +1,19 @@
 const { checkLogin } = require("../../account/account.service");
-const { UnauthorizedException } = require("../module/Exception");
+const CheckLoginDto = require("../../account/dto/CheckLoginDto");
+
+const wrapper = require("../module/wrapper");
 
 /**
  *
- * @param {number} needRank
+ * @param {RankGrade} needRank
  * @returns {Function}
  */
-const accountAuth =
-    (needRank = 0) =>
-    async (req, res, next) => {
-        const token = req.headers.authorization;
-        const user = await checkLogin(token);
-        if (user.rankIdx < needRank) {
-            let message = "No permission";
-            if (user.authStatus === "expired") {
-                message = "token expired";
-            }
-            next(new UnauthorizedException(message));
-        }
+const accountAuth = (needRank = 0) =>
+    wrapper(async (req, res, next) => {
+        const user = await checkLogin(CheckLoginDto.createDto(req.headers, needRank));
+
         req.user = user;
         next();
-    };
+    });
 
 module.exports = accountAuth;

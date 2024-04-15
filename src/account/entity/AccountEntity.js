@@ -112,6 +112,21 @@ class AccountEntity {
             this.authStatus = "expired";
         }
     }
+
+    /**
+     *
+     * @param {number} needRank
+     * @throws {UnauthorizedException}
+     */
+    checkPermission(needRank) {
+        if (this.rankIdx < needRank) {
+            let message = "No permission";
+            if (user.authStatus === "expired") {
+                message = "token expired";
+            }
+            throw UnauthorizedException(message);
+        }
+    }
     /**
      *
      * @param {void} user
