@@ -1,9 +1,5 @@
 const router = require("express").Router();
 
-const checkCondition = require("../util/middleware/checkCondition");
-const loginAuth = require("..//util/middleware/loginAuth");
-const adminAuth = require("../util/middleware/adminAuth");
-const checkAuthStatus = require("../util/middleware/checkAuthStatus");
 const uploadImg = require("../util/middleware/uploadImg");
 const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
@@ -13,6 +9,8 @@ const { getProductsAll, getProductsByCompany, getProductsBySearch, getProductByI
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductByIdxDto = require("./dto/GetProductByIdxDto");
+const CreateProductDto = require("./dto/CreateProductDto");
+const accountAuth = require("../util/middleware/accountAuth");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -28,10 +26,12 @@ const COMPANY_SIZE = 3;
 //모든 상품 가져오기
 router.get(
     "/all",
-    checkAuthStatus,
+    accountAuth(),
     wrapper(async (req, res, next) => {
         const user = req.user;
+
         const productList = await getProductsAll(GetProductsDto.createDto(user, req.query));
+
         res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );
@@ -39,10 +39,12 @@ router.get(
 //회사 행사페이지 상품 가져오기
 router.get(
     "/company/:companyIdx",
-    checkAuthStatus,
+    accountAuth(),
     wrapper(async (req, res, next) => {
         const user = req.user;
+
         const productList = await getProductsByCompany(GetProductsByCompanyDto.createDto(user, req.query, req.params));
+
         res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );
@@ -50,7 +52,7 @@ router.get(
 //상품 검색하기
 router.get(
     "/search",
-    checkAuthStatus,
+    accountAuth(),
     wrapper(async (req, res, next) => {
         const user = req.user;
         const productList = await getProductsBySearch(GetProductsBySearchDto.createDto(user, req.query));
@@ -61,7 +63,7 @@ router.get(
 //productIdx 가져오기
 router.get(
     "/:productIdx",
-    checkAuthStatus,
+    accountAuth(),
     wrapper(async (req, res, next) => {
         const user = req.user;
         const productList = await getProductByIdx(GetProductByIdxDto.createDto(user, req.params));
@@ -72,12 +74,10 @@ router.get(
 router.post(
     "/",
     uploadImg,
-    adminAuth,
-    checkCondition("name"),
-    checkCondition("price"),
+    accountAuth(2),
     wrapper(async (req, res, next) => {
         const { categoryIdx, name, price, eventInfo } = req.body;
-
+        await createProduct(CreateProductDto.createDto(req.file, req.body));
         await postProduct(categoryIdx, name, price, eventInfo, req.file);
 
         res.status(201).send();
@@ -88,7 +88,7 @@ router.post(
 router.put(
     "/:productIdx",
     uploadImg,
-    adminAuth,
+    accountAuth(2),
     wrapper(async (req, res, next) => {
         const { categoryIdx, name, price, eventInfo } = req.body;
         const { productIdx } = req.params;
@@ -102,7 +102,7 @@ router.put(
 //productIdx 삭제하기
 router.delete(
     "/:productIdx",
-    adminAuth,
+    accountAuth(2),
     wrapper(async (req, res, next) => {
         const { productIdx } = req.params;
 

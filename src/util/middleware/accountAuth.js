@@ -1,12 +1,14 @@
 const { checkLogin } = require("../../account/account.service");
 const CheckLoginDto = require("../../account/dto/CheckLoginDto");
+const { UnauthorizedException } = require("../module/Exception");
 
 const wrapper = require("../module/wrapper");
 
 /**
  *
- * @param {RankGrade} needRank
+ * @param {number} needRank
  * @returns {Function}
+ * @throws {UnauthorizedException}
  */
 const accountAuth = (needRank = 0) =>
     wrapper(async (req, res, next) => {
