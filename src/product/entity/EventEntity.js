@@ -1,4 +1,4 @@
-const Event = require("../dao/event.dao");
+const Event = require("../model/event.model");
 
 class EventEntity {
     /**

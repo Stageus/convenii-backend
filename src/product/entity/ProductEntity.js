@@ -1,4 +1,4 @@
-const Product = require("../dao/product.dao");
+const Product = require("../model/product.model");
 const EventEntity = require("./EventEntity");
 
 class ProductEntity {

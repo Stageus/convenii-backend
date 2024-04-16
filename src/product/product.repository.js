@@ -1,6 +1,6 @@
 const pgPool = require("../../src/util/module/pgPool");
 const query = require("../util/module/query");
-const Product = require("./dao/product.dao");
+const Product = require("./model/product.model");
 const SelectProductDao = require("./dao/select-product.dao");
 const SelectProductsAllDao = require("./dao/select-productsAll.dao");
 

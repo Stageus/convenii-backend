@@ -1,4 +1,3 @@
-const Account = require("../../../util/module/Account");
 const ProductEntity = require("../../entity/ProductEntity");
 
 class ProductResponseDto {
