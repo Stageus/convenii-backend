@@ -32,6 +32,7 @@ class Account {
      *@type {LoginStatus}
      */
     authStatus;
+
     /**
      *
      * @param {{
@@ -117,3 +118,9 @@ class Account {
 }
 
 module.exports = Account;
+
+// 1. jwt -> paload 타입
+// 2. req.user 타입을 다시 정의
+
+// 1. 유효성 검증  안하는게 좋을 것
+// 2. 클래스 이름이 애매하다.
