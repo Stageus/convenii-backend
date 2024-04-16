@@ -1,12 +1,8 @@
 const pgPool = require("../../src/util/module/pgPool");
-const { NotFoundException } = require("../util/module/Exception");
 const query = require("../util/module/query");
 const Product = require("./dao/product.dao");
+const SelectProductDao = require("./dao/select-product.dao");
 const SelectProductsAllDao = require("./dao/select-productsAll.dao");
-const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
-const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
-const GetProductsDto = require("./dto/GetProductsDto");
-const pageSizeOption = process.env.PAGE_SIZE_OPTION;
 
 /**
  *
@@ -123,7 +119,7 @@ const selectProducts = async (selectProductsAllDao, conn = pgPool) => {
                 name
             LIMIT $2 OFFSET $3;
             `,
-        [selectProductsAllDao.accountIdx, selectProductsAllDao.limit, selectProductsAllDao.offset, "%" + selectProductsAllDao.keyword + "%", selectProductsAllDao.categoryFilter, selectProductsAllDao.eventFilter],
+        [selectProductsAllDao.account.idx, selectProductsAllDao.limit, selectProductsAllDao.offset, "%" + selectProductsAllDao.keyword + "%", selectProductsAllDao.categoryFilter, selectProductsAllDao.eventFilter],
         conn
     );
     return queryResult.rows;
@@ -131,15 +127,14 @@ const selectProducts = async (selectProductsAllDao, conn = pgPool) => {
 
 /**
  * score은 db에서 numeric으로 저장되지만 나올때는 string으로 출력
- * @param {GetProductByIdx} getProductByIdx
+ * @param {SelectProductDao} selectProductDao
  * @param {pg.PoolClient} conn
  * @returns {Promise<Product | null>}
  * @throws {NotFoundException}
  *
  */
-const selectProductByIdx = async (getProductByIdx, conn = pgPool) => {
-    const { account, productIdx } = getProductByIdx;
-    const selectResult = await query(
+const selectProductByIdx = async (selectProductDao, conn = pgPool) => {
+    const queryResult = await query(
         `SELECT
             product.idx,
             product.category_idx "categoryIdx",
@@ -184,11 +179,11 @@ const selectProductByIdx = async (getProductByIdx, conn = pgPool) => {
             product.deleted_at IS NULL
         AND
             product.idx = $2`,
-        [account.idx, productIdx],
+        [selectProductDao.account.idx, selectProductDao.productIdx],
         conn
     );
 
-    return selectResult.rows[0];
+    return queryResult.rows[0];
 };
 
 module.exports = {
