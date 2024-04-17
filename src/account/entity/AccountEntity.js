@@ -121,10 +121,10 @@ class AccountEntity {
     checkPermission(needRank) {
         if (this.rankIdx < needRank) {
             let message = "No permission";
-            if (user.authStatus === "expired") {
+            if (this.authStatus === "expired") {
                 message = "token expired";
             }
-            throw UnauthorizedException(message);
+            throw new UnauthorizedException(message);
         }
     }
     /**
