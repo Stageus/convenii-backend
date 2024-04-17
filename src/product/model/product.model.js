@@ -1,4 +1,4 @@
-const Event = require("./event.model");
+const EventInfo = require("./eventInfo.model");
 
 class Product {
     /**
@@ -40,10 +40,6 @@ class Product {
      * @type {boolean}
      */
     bookmarked;
-    /**
-     *@type {Event[]}
-     */
-    events;
 }
 
 module.exports = Product;
