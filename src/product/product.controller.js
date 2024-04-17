@@ -5,7 +5,7 @@ const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductResponseDto = require("./dto/responseDto/ProductResponseDto");
-const { getProductsAll, getProductsByCompany, getProductsBySearch, getProductByIdx } = require("./product.service");
+const { getProductsAll, getProductByIdx, createProduct } = require("./product.service");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductByIdxDto = require("./dto/GetProductByIdxDto");
@@ -74,11 +74,9 @@ router.get(
 router.post(
     "/",
     uploadImg,
-    accountAuth(2),
+    accountAuth(),
     wrapper(async (req, res, next) => {
-        const { categoryIdx, name, price, eventInfo } = req.body;
         await createProduct(CreateProductDto.createDto(req.file, req.body));
-        await postProduct(categoryIdx, name, price, eventInfo, req.file);
 
         res.status(201).send();
     })

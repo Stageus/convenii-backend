@@ -4,7 +4,8 @@ const Product = require("./model/product.model");
 const SelectProductDao = require("./dao/select-product.dao");
 const SelectProductsAllDao = require("./dao/select-productsAll.dao");
 const UpdateProductDao = require("./dao/update-product.dao");
-const DeleteProductDao = require("./dao/delete-product");
+const DeleteProductDao = require("./dao/delete-product.dao");
+const CreateProductDao = require("./dao/create-product.dao");
 
 /**
  *
@@ -121,6 +122,31 @@ const selectProductByIdx = async (selectProductDao, conn = pgPool) => {
 
 /**
  *
+ * @param {CreateProductDao} createProductDao
+ * @param {pgPool.PoolClient} conn
+ * @returns {Promise<number>}
+ */
+const insertProduct = async (createProductDao, conn = pgPool) => {
+    const queryResult = await query(
+        `
+            INSERT INTO product (category_idx, name, price, image_url)
+            VALUES (
+                $1,
+                $2,
+                $3,
+                $4
+            )
+            RETURNING idx
+        `,
+        [createProductDao.categoryIdx, createProductDao.name, createProductDao.price, createProductDao.productImg],
+        conn
+    );
+
+    return queryResult.rows[0];
+};
+
+/**
+ *
  * @param {UpdateProductDao} updateProductDao
  * @param {pg.PoolClient} conn
  * @returns {Promise<pg.QueryResult>}
@@ -169,6 +195,7 @@ const deleteProduct = async (deleteProductDao, conn = pgPool) => {
 module.exports = {
     selectProducts,
     selectProductByIdx,
+    insertProduct,
     updateProduct,
     deleteProduct,
 };

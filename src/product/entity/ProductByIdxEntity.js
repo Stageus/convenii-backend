@@ -87,7 +87,6 @@ class ProductByIdxEntity {
      * @param {Event} eventWithMonth
      */
     static createEntityFromDao(product, eventWithMonth) {
-        console.log(eventWithMonth);
         return new ProductByIdxEntity({
             idx: product.idx,
             categoryIdx: product.categoryIdx,
