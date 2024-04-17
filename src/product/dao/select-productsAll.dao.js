@@ -1,13 +1,32 @@
+const Account = require("../../util/module/Account");
+
 class SelectProductsAllDao {
     /**
-     * @type {number}
+     * @type {Account}
      */
-    accountIdx;
+    account;
 
     /**
      * @type {number}
      */
-    productIdx;
+    limit;
+
+    /**
+     * @type {number}
+     */
+    offset;
+    /**
+     * @type {string}
+     */
+    keyword;
+    /**
+     * @type {number[]}
+     */
+    categoryFilter;
+    /**
+     * @type {number[]}
+     */
+    eventFilter;
 }
 
 module.exports = SelectProductsAllDao;
