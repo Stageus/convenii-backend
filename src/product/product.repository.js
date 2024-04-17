@@ -3,6 +3,8 @@ const query = require("../util/module/query");
 const Product = require("./model/product.model");
 const SelectProductDao = require("./dao/select-product.dao");
 const SelectProductsAllDao = require("./dao/select-productsAll.dao");
+const UpdateProductDao = require("./dao/update-product.dao");
+const DeleteProductDao = require("./dao/delete-product");
 
 /**
  *
@@ -45,55 +47,6 @@ const selectProducts = async (selectProductsAllDao, conn = pgPool) => {
                         AND
                             product_idx = product.idx
                     ) IS NOT NULL AS "bookmarked",
-                    TO_CHAR(current_date, 'YYYY-MM') AS "month",
-                    ARRAY (
-                        SELECT
-                            json_build_object(
-                                'companyIdx', event_history.company_idx,
-                                'eventIdx', event_history.event_idx,
-                                'price', price
-                            )
-                        FROM
-                            event_history
-                        WHERE
-                            event_history.product_idx = product.idx
-                        AND
-                            event_history.start_date >= date_trunc('month', current_date)
-                        AND
-                            event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-                        ORDER BY
-                            event_history.company_idx
-                    ) AS events
-                    ${
-                        selectProductsAllDao.companyIdx
-                            ? `,
-                     (
-                        SELECT
-                            SUM(
-                                CASE
-                                    WHEN
-                                        event_history.company_idx = ${selectProductsAllDao.companyIdx}
-                                    THEN
-                                        event.priority * 2
-                                    ELSE
-                                         -event.priority
-                                END
-                            )   
-                        FROM
-                            event_history
-                        JOIN 
-                            event ON event_history.event_idx = event.idx
-                        WHERE          
-                            event_history.product_idx = product.idx 
-                        AND
-                            event_history.start_date >= date_trunc('month', current_date)
-                        AND
-                            event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-                        GROUP BY
-                            event_history.product_idx
-                    ) AS priority_score`
-                            : ``
-                    }
                 FROM    
                     product
                 WHERE
@@ -113,9 +66,7 @@ const selectProducts = async (selectProductsAllDao, conn = pgPool) => {
                 product_info.idx = possible_product.idx
             WHERE
                 possible_product.idx IS NOT NULL
-            ${selectProductsAllDao.companyIdx ? ` AND priority_score >= 0` : ``}
             ORDER BY
-                ${selectProductsAllDao.companyIdx ? `priority_score DESC,` : ``}
                 name
             LIMIT $2 OFFSET $3;
             `,
@@ -135,50 +86,32 @@ const selectProducts = async (selectProductsAllDao, conn = pgPool) => {
  */
 const selectProductByIdx = async (selectProductDao, conn = pgPool) => {
     const queryResult = await query(
-        `SELECT
-            product.idx,
-            product.category_idx "categoryIdx",
-            product.name,
-            product.price,
-            product.image_url "productImg",
-            product.score,
-            product.created_at "createdAt",
-            (
-                SELECT
-                    bookmark.idx
-                FROM
-                    bookmark
-                WHERE
-                    account_idx = $1
-                AND
-                    product_idx = product.idx
-            ) IS NOT NULL AS "bookmarked",
-            -- 이벤트 정보
-            TO_CHAR(current_date, 'YYYY-MM') AS "month",
-            ARRAY (
-                SELECT
-                    json_build_object(
-                        'companyIdx', event_history.company_idx,
-                        'eventIdx', event_history.event_idx,
-                        'price', price
-                    )
-                FROM
-                    event_history
-                WHERE
-                    event_history.product_idx = product.idx
-                AND
-                    event_history.start_date >= date_trunc('month', current_date)
-                AND
-                    event_history.start_date < date_trunc('month', current_date) + interval '1 month'
-                ORDER BY
-                    event_history.company_idx
-            ) AS events
-        FROM    
-            product
-        WHERE
-            product.deleted_at IS NULL
-        AND
-            product.idx = $2`,
+        `
+            SELECT
+                idx,
+                category_idx "categoryIdx",
+                name,
+                price,
+                image_url "productImg",
+                score,
+                created_at "createdAt",
+                (
+                    SELECT
+                        bookmark.idx
+                    FROM
+                        bookmark
+                    WHERE
+                        account_idx = $1
+                    AND
+                        product_idx = product.idx
+                ) IS NOT NULL AS "bookmarked",
+            FROM    
+                product
+            WHERE
+                idx = $2
+            AND
+                deleted_at IS NULL
+        `,
         [selectProductDao.account.idx, selectProductDao.productIdx],
         conn
     );
@@ -186,7 +119,56 @@ const selectProductByIdx = async (selectProductDao, conn = pgPool) => {
     return queryResult.rows[0];
 };
 
+/**
+ *
+ * @param {UpdateProductDao} updateProductDao
+ * @param {pg.PoolClient} conn
+ * @returns {Promise<pg.QueryResult>}
+ */
+const updateProduct = async (updateProductDao, conn = pgPool) => {
+    const params = [updateProductDao.productIdx, updateProductDao.categoryIdx, updateProductDao.name, updateProductDao.price];
+    if (updateProductDao.productImg) {
+        params.push(updateProductDao.productImg);
+    }
+    return await query(
+        `
+            UPDATE
+                product
+            SET
+                category_idx = $2,
+                name = $3,
+                price = $4
+                ${updateProductDao.productImg ? ", image_url = $5" : ""}
+            WHERE
+                idx = $1       
+        `,
+        params,
+        conn
+    );
+};
+/**
+ *
+ * @param {DeleteProductDao} deleteProductDao
+ * @param {pg.PoolClient} conn
+ * @returns {Promise<pg.QueryResult>}
+ */
+const deleteProduct = async (deleteProductDao, conn = pgPool) => {
+    return await query(
+        `
+            UPDATE
+                product
+            SET
+                deleted_at = current_date
+            WHERE
+                idx = $1
+        `,
+        [deleteProductDao.productIdx],
+        conn
+    );
+};
 module.exports = {
     selectProducts,
     selectProductByIdx,
+    updateProduct,
+    deleteProduct,
 };
