@@ -1,8 +1,15 @@
-const Event = require("../../event/model/event.model");
-const EventEntity = require("../../event/entity/EventEntity");
 const Product = require("../model/product.model");
+const EventInfo = require("../../event/model/eventWithMonth.model");
+const EventInfoEntity = require("../../event/entity/EventInfoEntity");
+class ProductByIdxEntity {
+    /**
+     * @typedef {
+     *  companyIdx,
+     *  eventIdx,
+     *  month,
+     * } Event
+     */
 
-class ProductEntity {
     /**
      * @type {number}
      */
@@ -43,9 +50,9 @@ class ProductEntity {
      */
     bookmarked;
     /**
-     *@type {Event}
+     *@type {EventInfo[]}
      */
-    events;
+    eventInfo;
 
     /**
      *
@@ -58,7 +65,7 @@ class ProductEntity {
      *  score: string,
      *  createdAt: string,
      *  bookmarked: boolean,
-     *  events: Event,
+     *  eventInfo: EventInfo[],
      * }} data
      */
     constructor(data) {
@@ -70,16 +77,15 @@ class ProductEntity {
         this.score = data.score;
         this.createdAt = data.createdAt;
         this.bookmarked = data.bookmarked;
-        this.events = data.events;
+        this.eventInfo = data.eventInfo;
     }
 
     /**
      *
      * @param {Product} product
-     * @returns {ProductEntity}
      */
     static createEntityFromDao(product) {
-        return new ProductEntity({
+        return new ProductByIdxEntity({
             idx: product.idx,
             categoryIdx: product.categoryIdx,
             name: product.name,
@@ -88,9 +94,9 @@ class ProductEntity {
             score: product.score,
             createdAt: product.createdAt,
             bookmarked: product.bookmarked,
-            events: product.events?.map((event) => EventEntity.createEntity(event)),
+            eventInfo: EventInfoEntity.createEntity(product.eventInfo),
         });
     }
 }
 
-module.exports = ProductEntity;
+module.exports = ProductByIdxEntity;

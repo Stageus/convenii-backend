@@ -1,5 +1,3 @@
-const EventInfo = require("./eventInfo.model");
-
 class Product {
     /**
      * @type {number}

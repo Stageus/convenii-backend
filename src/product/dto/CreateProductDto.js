@@ -1,4 +1,4 @@
-const Event = require("../model/event.model");
+const Event = require("../../event/model/event.model");
 const { BadRequestException } = require("../../util/module/Exception");
 const patternTest = require("../../util/module/patternTest");
 

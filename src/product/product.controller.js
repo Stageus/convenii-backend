@@ -31,7 +31,7 @@ router.get(
         const user = req.user;
 
         const productList = await getProductsAll(GetProductsDto.createDto(user, req.query));
-
+        console.log(productList);
         res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );

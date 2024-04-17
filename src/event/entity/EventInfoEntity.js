@@ -27,13 +27,14 @@ class EventInfoEntity {
 
     /**
      *
-     * @param {EventWithMonth} eventInfo
+     * @param {EventWithMonth} event
      * @returns {EventInfoEntity}
      */
-    static createEntity(eventInfo) {
+    static createEntity(event) {
         return new EventInfoEntity({
-            month: eventInfo.month,
-            events: EventEntity.createEntity(eventInfo.events),
+            month: event.month,
+
+            events: EventEntity.createEntity(event.events),
         });
     }
 }
