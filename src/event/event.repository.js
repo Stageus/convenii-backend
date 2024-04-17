@@ -1,5 +1,7 @@
 const pgPool = require("../util/module/pgPool");
 const query = require("../util/module/query");
+const DeleteEventByProductIdxDao = require("./dao/delete-eventByProductIdx.dao");
+const InsertEventDao = require("./dao/insert-event.dao");
 const SelectEventByProductDao = require("./dao/select-eventByProduct.dao");
 const EventWith10Month = require("./model/eventWith10Month.model");
 
@@ -125,7 +127,7 @@ const insertEvent = async (insertEventDao, conn = pgPool) => {
             VALUES
                 (current_date, $1, UNNEST($2::int[]), UNNEST($3::int[]), UNNEST($4::varchar[]))
         `,
-        [insertEventDao.productIdx, insertEventDao.companyIdx, insertEventDao, eventIdx, insertEventDao.price],
+        [insertEventDao.productIdx, insertEventDao.companyList, insertEventDao.eventList, insertEventDao.priceList],
         conn
     );
 };
@@ -136,8 +138,3 @@ module.exports = {
     deleteEvent,
     insertEvent,
 };
-
-/**
- * DeleteEventByProductIdxDao
- *
- */
