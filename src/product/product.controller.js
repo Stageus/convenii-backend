@@ -31,7 +31,7 @@ router.get(
         const user = req.user;
 
         const productList = await getProductsAll(GetProductsDto.createDto(user, req.query));
-        console.log(productList);
+
         res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );
@@ -43,7 +43,7 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
 
-        const productList = await getProductsByCompany(GetProductsByCompanyDto.createDto(user, req.query, req.params));
+        const productList = await getProductsAll(GetProductsByCompanyDto.createDto(user, req.query, req.params));
 
         res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
@@ -55,7 +55,7 @@ router.get(
     accountAuth(),
     wrapper(async (req, res, next) => {
         const user = req.user;
-        const productList = await getProductsBySearch(GetProductsBySearchDto.createDto(user, req.query));
+        const productList = await getProductsAll(GetProductsBySearchDto.createDto(user, req.query));
         res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );

@@ -64,7 +64,6 @@ class GetProductsBySearchDto {
      * @throws {BadRequestException}
      */
     static validate({ page, keyword, eventFilter, categoryFilter }) {
-        console.log(eventFilter);
         if (!patternTest("page", page)) {
             throw new BadRequestException("page Error");
         }
