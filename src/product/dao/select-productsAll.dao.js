@@ -7,27 +7,7 @@ class SelectProductsAllDao {
     /**
      * @type {number}
      */
-    limit;
-
-    /**
-     * @type {number}
-     */
-    offset;
-
-    /**
-     * @type {string}
-     */
-    keyword;
-
-    /**
-     * @type {number[]}
-     */
-    categoryFilter;
-
-    /**
-     * @type {number[]}
-     */
-    eventFilter;
+    productIdx;
 }
 
 module.exports = SelectProductsAllDao;

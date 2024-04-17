@@ -2,7 +2,7 @@ class SelectProductDao {
     /**
      * @type {number}
      */
-    accountIdx;
+    account;
 
     /**
      * @type {number}
