@@ -1,15 +1,20 @@
 const pgPool = require("../util/module/pgPool");
 const query = require("../util/module/query");
+const SelectEventByProductDao = require("./dao/select-eventByProduct.dao");
+const EventWith10Month = require("./model/eventWith10Month.model");
+
+const EventWithProductIdx = require("./model/eventWithProductIdx.model");
 
 /**
  *
  * @param {SelectEventByProductDao} selectEventByProductDao
- * @param {} conn
- * @returns
+ * @param {pg.PoolClient} conn
+ * @returns {Promise<EventWith10Month[]>}
  */
 const selectEventByProduct = async (selectEventByProductDao, conn = pgPool) => {
     const queryResult = await query(
         `
+            --최근 10개월 불러오기
             WITH month_array AS (
                 SELECT to_char(date_trunc('month', current_date) - interval '1 month' * series, 'YYYY-MM') AS month
                 FROM generate_series(0, 9) AS series
@@ -36,6 +41,7 @@ const selectEventByProduct = async (selectEventByProductDao, conn = pgPool) => {
                 json_agg(event_array.event_info) FILTER (WHERE event_array.event_info IS NOT NULL) AS events
             FROM
                 month_array
+            -- 기간을 기준으로 LEFT JOIN 하여 데이터가 null인 경우도 배열로 넣기
             LEFT JOIN
                 event_array ON month_array.month = event_array.event_month
             GROUP BY
@@ -46,27 +52,26 @@ const selectEventByProduct = async (selectEventByProductDao, conn = pgPool) => {
         [selectEventByProductDao.productIdx],
         conn
     );
-    return queryResult.rows[0];
+    return queryResult.rows;
 };
 
 /**
  *
- * @param {SelectEventsDao} selectEventsDao
- * @param {*} conn
- * @returns
+ * @param {pg.PoolClient} conn
+ * @returns {Promise<EventWithProductIdx>}
  */
-const selectEvents = async (selectEventsDao, conn = pgPool) => {
+const selectEvents = async (conn = pgPool) => {
     const queryResult = await query(
         `
         SELECT
-            product_idx,
+            product_idx AS "productIdx",
             json_agg(
                 json_build_object(
                     'companyIdx', company_idx,
                     'eventIdx', event_idx,
                     'price', price
-                )
-            ) AS eventInfo
+                ) ORDER BY company_idx
+            ) AS events
         FROM
             event_history
         WHERE
@@ -74,17 +79,14 @@ const selectEvents = async (selectEventsDao, conn = pgPool) => {
         GROUP BY
             product_idx
         ORDER BY
-            product_idx;
-                company_idx DESC;
-
-
+            product_idx
         `,
         conn
     );
     return queryResult.rows;
 };
-/*
-추가해야할 파일
-1.SelectEventByProductDao
-2.SelecctEventsDao
-*/
+
+module.exports = {
+    selectEventByProduct,
+    selectEvents,
+};

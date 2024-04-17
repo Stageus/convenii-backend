@@ -1,6 +1,6 @@
 const Event = require("./event.model");
 
-class EventInfo {
+class EventWith10Month {
     /**
      * @type {string}
      */
@@ -12,4 +12,4 @@ class EventInfo {
     events;
 }
 
-module.exports = EventInfo;
+module.exports = EventWith10Month;
