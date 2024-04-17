@@ -77,12 +77,14 @@ const selectEvents = async (conn = pgPool) => {
             FROM
                 event_history
             WHERE
-                start_date >= (date_trunc('month', current_date) - interval '1 month')
+                start_date >= date_trunc('month', current_date)
+                AND start_date < date_trunc('month', current_date) + interval '1 month'
             GROUP BY
                 product_idx
             ORDER BY
                 product_idx
         `,
+        [],
         conn
     );
     return queryResult.rows;
