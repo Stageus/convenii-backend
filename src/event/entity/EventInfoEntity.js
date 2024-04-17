@@ -33,8 +33,7 @@ class EventInfoEntity {
     static createEntity(event) {
         return new EventInfoEntity({
             month: event.month,
-
-            events: EventEntity.createEntity(event.events),
+            events: event.eventInfo?.map((event) => EventEntity.createEntity(event)) ?? null,
         });
     }
 }

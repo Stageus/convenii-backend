@@ -104,7 +104,7 @@ const selectProductByIdx = async (selectProductDao, conn = pgPool) => {
                         account_idx = $1
                     AND
                         product_idx = product.idx
-                ) IS NOT NULL AS "bookmarked",
+                ) IS NOT NULL AS "bookmarked"
             FROM    
                 product
             WHERE

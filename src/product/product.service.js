@@ -7,7 +7,7 @@ const GetProductsDto = require("./dto/GetProductsDto");
 const ProductByIdxEntity = require("./entity/ProductByIdxEntity");
 const ProductEntity = require("./entity/ProductEntity");
 const { selectProducts, selectProductByIdx } = require("./product.repository");
-const { selectEvents } = require("../event/event.repository");
+const { selectEvents, selectEventByProduct } = require("../event/event.repository");
 
 /**
  * @typedef {GetProductsDto|| GetProductsByCompanyDto || GetProductsBySearchDto}  ProductsDto
@@ -58,7 +58,13 @@ const getProductByIdx = async (getProductByIdxDto) => {
         throw new NotFoundException("Cannot find product");
     }
 
-    return ProductByIdxEntity.createEntityFromDao(product);
+    const eventWithMonth = await selectEventByProduct(getProductByIdxDto);
+    console.log(eventWithMonth);
+    if (eventWithMonth.length === 0) {
+        throw new NotFoundException("Cannot find event");
+    }
+
+    return ProductByIdxEntity.createEntityFromDao(product, eventWithMonth);
 };
 
 const createProduct = async (createProductDto) => {};

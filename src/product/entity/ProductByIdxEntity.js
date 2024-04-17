@@ -1,6 +1,7 @@
 const Product = require("../model/product.model");
 const EventInfo = require("../../event/model/eventWithMonth.model");
 const EventInfoEntity = require("../../event/entity/EventInfoEntity");
+const Event = require("../../event/model/event.model");
 class ProductByIdxEntity {
     /**
      * @typedef {
@@ -83,8 +84,10 @@ class ProductByIdxEntity {
     /**
      *
      * @param {Product} product
+     * @param {Event} eventWithMonth
      */
-    static createEntityFromDao(product) {
+    static createEntityFromDao(product, eventWithMonth) {
+        console.log(eventWithMonth);
         return new ProductByIdxEntity({
             idx: product.idx,
             categoryIdx: product.categoryIdx,
@@ -94,7 +97,7 @@ class ProductByIdxEntity {
             score: product.score,
             createdAt: product.createdAt,
             bookmarked: product.bookmarked,
-            eventInfo: EventInfoEntity.createEntity(product.eventInfo),
+            eventInfo: eventWithMonth?.map((events) => EventInfoEntity.createEntity(events)),
         });
     }
 }

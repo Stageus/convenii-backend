@@ -32,7 +32,7 @@ const selectEventByProduct = async (selectEventByProductDao, conn = pgPool) => {
                 FROM
                     event_history
                 WHERE
-                    product_idx = 35
+                    product_idx = $1
                 AND
                     start_date >= (date_trunc('month', current_date) - interval '9 months')
                 ORDER BY
