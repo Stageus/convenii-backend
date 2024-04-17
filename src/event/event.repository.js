@@ -3,7 +3,7 @@ const query = require("../util/module/query");
 const DeleteEventByProductIdxDao = require("./dao/delete-eventByProductIdx.dao");
 const InsertEventDao = require("./dao/insert-event.dao");
 const SelectEventByProductDao = require("./dao/select-eventByProduct.dao");
-const EventWith10Month = require("./model/eventWith10Month.model");
+const EventWithMonth = require("./model/eventWithMonth.model");
 
 const EventWithProductIdx = require("./model/eventWithProductIdx.model");
 
@@ -11,7 +11,7 @@ const EventWithProductIdx = require("./model/eventWithProductIdx.model");
  *
  * @param {SelectEventByProductDao} selectEventByProductDao
  * @param {pg.PoolClient} conn
- * @returns {Promise<EventWith10Month[]>}
+ * @returns {Promise<EventWithMonth[]>}
  */
 const selectEventByProduct = async (selectEventByProductDao, conn = pgPool) => {
     const queryResult = await query(
@@ -40,7 +40,7 @@ const selectEventByProduct = async (selectEventByProductDao, conn = pgPool) => {
             )
             SELECT
                 month_array.month,
-                json_agg(event_array.event_info) FILTER (WHERE event_array.event_info IS NOT NULL) AS events
+                json_agg(event_array.event_info) FILTER (WHERE event_array.event_info IS NOT NULL) AS "eventInfo"
             FROM
                 month_array
         -- 기간을 기준으로 LEFT JOIN 하여 데이터가 null인 경우도 배열로 넣기
@@ -73,7 +73,7 @@ const selectEvents = async (conn = pgPool) => {
                         'eventIdx', event_idx,
                         'price', price
                     ) ORDER BY company_idx
-                ) AS events
+                ) AS "eventInfo"
             FROM
                 event_history
             WHERE

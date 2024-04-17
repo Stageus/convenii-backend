@@ -1,4 +1,4 @@
-const EventInfo = require("../model/eventInfo.model");
+const EventWithMonth = require("../model/eventWithMonth.model");
 const EventEntity = require("./EventEntity");
 const Event = require("../model/event.model");
 
@@ -27,7 +27,7 @@ class EventInfoEntity {
 
     /**
      *
-     * @param {EventInfo} eventInfo
+     * @param {EventWithMonth} eventInfo
      * @returns {EventInfoEntity}
      */
     static createEntity(eventInfo) {
