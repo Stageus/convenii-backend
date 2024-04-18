@@ -1,4 +1,5 @@
 const pgPool = require("../../src/util/module/pgPool");
+const pg = require("pg");
 const query = require("../util/module/query");
 const Product = require("./model/product.model");
 const SelectProductDao = require("./dao/select-product.dao");
@@ -6,6 +7,54 @@ const SelectProductsAllDao = require("./dao/select-productsAll.dao");
 const UpdateProductDao = require("./dao/update-product.dao");
 const DeleteProductDao = require("./dao/delete-product.dao");
 const CreateProductDao = require("./dao/create-product.dao");
+const SelectProductsBookmarkedDao = require("./dao/select-productsBookmarked.dao");
+
+/**
+ *
+ * @param {SelectProductsBookmarkedDao} selectProductsBookmarkedDao
+ * @param {pg.PoolClient} conn
+ * @returns {Promise<Product[]|null}
+ */
+const selectProductsBookmarked = async (selectProductsBookmarkedDao, conn = pgPool) => {
+    const queryResult = await query(
+        `
+            --북마크한 product_idx
+            WITH possilbe_product AS (
+                SELECT
+                    DISTINCT bookmark.product_idx AS idx
+                FROM
+                    bookmark
+                WHERE
+                    account_idx = $1
+            )
+            SELECT
+                product.idx,
+                product.category_idx "categoryIdx",
+                product.name,
+                product.price,
+                product.image_url "productImg",
+                product.score,
+                product.created_at "createdAt",
+                TRUE AS "bookmarked"
+            FROM    
+                product
+            LEFT JOIN
+                possilbe_product
+            ON
+                product.idx = possilbe_product.idx
+            WHERE
+                product.deleted_at IS NULL
+            AND
+                possilbe_product.idx IS NOT NULL
+            ORDER BY
+                product.name
+            LIMIT $2 OFFSET $3            
+            `,
+        [selectProductsBookmarkedDao.account.idx, selectProductsBookmarkedDao.limit, selectProductsBookmarkedDao.offset],
+        conn
+    );
+    return queryResult.rows;
+};
 
 /**
  *
@@ -194,6 +243,7 @@ const deleteProduct = async (deleteProductDao, conn = pgPool) => {
     );
 };
 module.exports = {
+    selectProductsBookmarked,
     selectProducts,
     selectProductByIdx,
     insertProduct,
