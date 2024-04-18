@@ -1,18 +1,20 @@
 const router = require("express").Router();
-const loginAuth = require("../middlewares/loginAuth");
-const pgPool = require("../modules/pgPool");
-const wrapper = require("../modules/wrapper");
-const query = require("../modules/query");
-const { UnauthorizedException, BadRequestException } = require("../modules/Exception");
+
+const ProductResponseDto = require("../product/dto/responseDto/ProductResponseDto");
+const accountAuth = require("../util/middleware/accountAuth");
+const wrapper = require("../util/module/wrapper");
+const { createBookmark, getBookmarkedProduct, removeBookmark } = require("./bookmark.service");
+const CreateBookmarkDto = require("./dto/CreateBookmarkDto");
+const GetBookmarkedProductDto = require("./dto/GetBookmarkedProductDto");
+const RemoveBookmarkDto = require("./dto/RemoveBookmarkDto");
 
 // 북마크 등록하기
 router.post(
     "/product/:productIdx",
-    loginAuth,
+    accountAuth(1),
     wrapper(async (req, res, next) => {
-        const { productIdx } = req.params;
         const user = req.user;
-
+        await createBookmark(CreateBookmarkDto.createDto(user, req.params));
         res.status(201).send();
     })
 );
@@ -20,27 +22,22 @@ router.post(
 // 북마크 가져오기
 router.get(
     "/all",
-    loginAuth,
+    accountAuth(1),
     wrapper(async (req, res, next) => {
         const user = req.user;
-        const { page } = req.query;
-        const pageSizeOption = 10;
+        const productList = getBookmarkedProduct(GetBookmarkedProductDto.createDto(user, req.query));
 
-        if (!page || isNaN(parseInt(page, 10)) || page <= 0) {
-            throw new BadRequestException("page 입력 오류");
-        }
-
-        res.status(200).send({
-            data: products,
-        });
+        res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );
 
 // 북마크 삭제하기
 router.delete(
     "/product/:productIdx",
-    loginAuth,
+    accountAuth(1),
     wrapper(async (req, res, next) => {
+        const user = req.user;
+        await removeBookmark(RemoveBookmarkDto.createDto(user, req.params));
         res.status(201).send();
     })
 );
