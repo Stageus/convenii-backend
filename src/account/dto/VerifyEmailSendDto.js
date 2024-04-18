@@ -44,6 +44,11 @@ class VerifyEmailSendDto {
      */
     static createDto(user, body) {
         VerifyEmailSendDto.validate(body.email);
+        if (user.authStatus === "true") {
+            if (user.email !== body.email) {
+                throw new UnauthorizedException("email error");
+            }
+        }
         return new VerifyEmailSendDto({
             account: user.authStatus === "true" ? user : "noLogin",
             email: body.email,
