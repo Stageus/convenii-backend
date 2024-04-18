@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const mailerConfig = require("../config/mailerConfig");
+const mailerConfig = require("../../config/mailerConfig");
 
 async function sendVerificationEmail(email, verificationCode) {
     const transporter = nodemailer.createTransport(mailerConfig);
