@@ -179,6 +179,7 @@ const updateProduct = async (updateProductDao, conn = pgPool) => {
  * @returns {Promise<pg.QueryResult>}
  */
 const deleteProduct = async (deleteProductDao, conn = pgPool) => {
+    console.log(deleteProductDao);
     return await query(
         `
             UPDATE

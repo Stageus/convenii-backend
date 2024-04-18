@@ -6,10 +6,11 @@ const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductByIdxEntity = require("./entity/ProductByIdxEntity");
 const ProductEntity = require("./entity/ProductEntity");
-const { selectProducts, selectProductByIdx, insertProduct, updateProduct } = require("./product.repository");
+const { selectProducts, selectProductByIdx, insertProduct, updateProduct, deleteProduct } = require("./product.repository");
 const { selectEvents, selectEventByProduct, insertEvent, deleteEvent } = require("../event/event.repository");
 const pgPool = require("../util/module/pgPool");
 const AmendProductDto = require("./dto/AmendProductDto");
+const RemoveProductDto = require("./dto/RemoveProductDto");
 
 /**
  * @typedef {GetProductsDto|| GetProductsByCompanyDto || GetProductsBySearchDto}  ProductsDto
@@ -99,6 +100,7 @@ const createProduct = async (createProductDto) => {
 /**
  *
  * @param {AmendProductDto} amendProductDto
+ * @returns {Promise<void>}
  */
 const amendProduct = async (amendProductDto) => {
     const client = await pgPool.connect();
@@ -120,9 +122,18 @@ const amendProduct = async (amendProductDto) => {
     }
 };
 
+/**
+ *
+ * @param {RemoveProductDto} removeProductDto
+ * @returns {Promise<void>}
+ */
+const removeProduct = async (removeProductDto) => {
+    await deleteProduct(removeProductDto);
+};
 module.exports = {
     getProductsAll,
     getProductByIdx,
     createProduct,
     amendProduct,
+    removeProduct,
 };

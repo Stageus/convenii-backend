@@ -5,13 +5,14 @@ const wrapper = require("../util/module/wrapper");
 const patternTest = require("../util/module/patternTest");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductResponseDto = require("./dto/responseDto/ProductResponseDto");
-const { getProductsAll, getProductByIdx, createProduct, amendProduct } = require("./product.service");
+const { getProductsAll, getProductByIdx, createProduct, amendProduct, removeProduct } = require("./product.service");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductByIdxDto = require("./dto/GetProductByIdxDto");
 const CreateProductDto = require("./dto/CreateProductDto");
 const accountAuth = require("../util/middleware/accountAuth");
 const AmendProductDto = require("./dto/AmendProductDto");
+const RemoveProductDto = require("./dto/RemoveProductDto");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -87,7 +88,7 @@ router.post(
 router.put(
     "/:productIdx",
     uploadImg,
-    accountAuth(),
+    accountAuth(2),
     wrapper(async (req, res, next) => {
         await amendProduct(AmendProductDto.createDto(req.file, req.body, req.params));
 
@@ -100,9 +101,7 @@ router.delete(
     "/:productIdx",
     accountAuth(2),
     wrapper(async (req, res, next) => {
-        const { productIdx } = req.params;
-
-        await deleteProduct(productIdx);
+        await removeProduct(RemoveProductDto.createDto(req.params));
         res.status(204).send();
     })
 );
