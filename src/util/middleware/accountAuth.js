@@ -1,6 +1,5 @@
 const { checkLogin } = require("../../account/account.service");
 const CheckLoginDto = require("../../account/dto/CheckLoginDto");
-const { UnauthorizedException } = require("../module/Exception");
 
 const wrapper = require("../module/wrapper");
 

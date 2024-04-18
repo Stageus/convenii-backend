@@ -2,7 +2,6 @@ const router = require("express").Router();
 
 const uploadImg = require("../util/middleware/uploadImg");
 const wrapper = require("../util/module/wrapper");
-const patternTest = require("../util/module/patternTest");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductResponseDto = require("./dto/responseDto/ProductResponseDto");
 const { getProductsAll, getProductByIdx, createProduct, amendProduct, removeProduct } = require("./product.service");

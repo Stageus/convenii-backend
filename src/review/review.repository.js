@@ -3,7 +3,7 @@ const query = require("../util/module/query");
 const InsertReivewDao = require("./dao/insert-review.dao");
 const SelectReviewsDao = require("./dao/select-reviews.dao");
 const UpdateScoreDao = require("./dao/update-score.dao");
-const Review = require("./model/revew.model");
+const Review = require("./model/review.model");
 
 /**
  *
@@ -80,7 +80,7 @@ const selectReviews = async (selectReviewsDao, conn = pgPool) => {
         conn
     );
 
-    return queryResult;
+    return queryResult.rows;
 };
 
 module.exports = {
