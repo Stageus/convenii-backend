@@ -5,7 +5,7 @@ const https = require("https");
 const app = express();
 
 const accountApi = require("./src/account/account.controller");
-// const bookmarkApi = require("./src/routers/bookmark");
+const bookmarkApi = require("./src/bookmark/bookmark.controller");
 const productApi = require("./src/product/product.controller");
 const reviewApi = require("./src/review/review.controller");
 
@@ -22,7 +22,7 @@ app.use(morganLogger);
 //Api---------------------------------------------------//
 
 app.use("/account", accountApi);
-// app.use("/bookmark", bookmarkApi);
+app.use("/bookmark", bookmarkApi);
 app.use("/product", productApi);
 app.use("/review", reviewApi);
 

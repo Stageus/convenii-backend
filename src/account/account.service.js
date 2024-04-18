@@ -32,15 +32,7 @@ const checkLogin = async (checkLoginDto) => {
  * @returns {Promise<void>}
  */
 const verifyEmailSend = async (verifyEmailSendDto) => {
-    const { email, account } = verifyEmailSendDto;
-    console.log(email, account);
-    // 비로그인, 로그인
-    if (account === "noLogin") {
-        const accountCheck = await selectAccountByEmail(verifyEmailSendDto);
-        if (accountCheck) {
-            throw new BadRequestException("email duplication");
-        }
-    }
+    const { email } = verifyEmailSendDto;
 
     const verificationCode = generateVerificationCode();
 
