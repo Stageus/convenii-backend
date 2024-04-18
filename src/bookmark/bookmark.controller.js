@@ -25,8 +25,9 @@ router.get(
     accountAuth(1),
     wrapper(async (req, res, next) => {
         const user = req.user;
-        const productList = getBookmarkedProduct(GetBookmarkedProductDto.createDto(user, req.query));
+        const productList = await getBookmarkedProduct(GetBookmarkedProductDto.createDto(user, req.query));
 
+        console.log(productList);
         res.status(200).send(ProductResponseDto.create(productList, user).products());
     })
 );

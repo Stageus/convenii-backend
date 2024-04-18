@@ -1,7 +1,7 @@
 const { selectEvents } = require("../event/event.repository");
 const ProductEntity = require("../product/entity/ProductEntity");
 const { selectProductsBookmarked } = require("../product/product.repository");
-const { UnauthorizedException, NotFoundException } = require("../util/module/Exception");
+const { UnauthorizedException, NotFoundException, BadRequestException } = require("../util/module/Exception");
 const { selectBookmarkWithAccount, insertBookmark, deleteBookmark, selectBookmarkedProductIdx } = require("./bookmark.repository");
 const CreateBookmarkDto = require("./dto/CreateBookmarkDto");
 const GetBookmarkedProductDto = require("./dto/GetBookmarkedProductDto");
@@ -13,11 +13,19 @@ const RemoveBookmarkDto = require("./dto/RemoveBookmarkDto");
  * @returns {Promise<void>}
  */
 const createBookmark = async (createBookmarkDto) => {
-    const alreadyBookmarked = await selectBookmarkWithAccount(createBookmarkDto);
-    if (alreadyBookmarked) {
-        throw new UnauthorizedException("alreadyBookmarked");
+    try {
+        const alreadyBookmarked = await selectBookmarkWithAccount(createBookmarkDto);
+        if (alreadyBookmarked) {
+            throw new UnauthorizedException("alreadyBookmarked");
+        }
+        await insertBookmark(createBookmarkDto);
+    } catch (err) {
+        if (err.code === "23503") {
+            throw new BadRequestException("cannot found product");
+        } else {
+            throw err;
+        }
     }
-    await insertBookmark(createBookmarkDto);
 };
 
 /**
