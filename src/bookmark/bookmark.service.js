@@ -1,6 +1,7 @@
 const { UnauthorizedException } = require("../util/module/Exception");
-const { selectBookmarkWithAccount, insertBookmark } = require("./bookmark.repository");
+const { selectBookmarkWithAccount, insertBookmark, deleteBookmark } = require("./bookmark.repository");
 const CreateBookmarkDto = require("./dto/CreateBookmarkDto");
+const RemoveBookmarkDto = require("./dto/RemoveBookmarkDto");
 
 /**
  *
@@ -13,4 +14,18 @@ const createBookmark = async (createBookmarkDto) => {
         throw new UnauthorizedException("alreadyBookmarked");
     }
     await insertBookmark(createBookmarkDto);
+};
+
+/**
+ *
+ * @param {RemoveBookmarkDto} removeBookmarkDto
+ * @returns {Promise<void}
+ */
+const removeBookmark = async (removeBookmarkDto) => {
+    await deleteBookmark(removeBookmarkDto);
+};
+
+module.exports = {
+    createBookmark,
+    removeBookmark,
 };
