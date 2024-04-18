@@ -50,9 +50,9 @@ class SignInDto {
      */
     static async createDto(body) {
         SignInDto.validate(body);
-        return await SignInDto({
+        return new SignInDto({
             email: body.email.trim(),
-            pw: hashedPw,
+            pw: body.pw,
         });
     }
 }
