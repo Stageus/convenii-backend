@@ -18,7 +18,7 @@ const insertReivew = async (insertReviewDao, conn = pgPool) => {
             review (product_idx, account_idx, content, score)
         VALUES
             ($1,$2,$3,$4)`,
-        [insertReviewDao.productIdx, insertReviewDao.accountIdx, insertReviewDao.content, insertReviewDao.score],
+        [insertReviewDao.productIdx, insertReviewDao.account.idx, insertReviewDao.content, insertReviewDao.score],
         conn
     );
 };
@@ -58,11 +58,12 @@ const selectReviews = async (selectReviewsDao, conn = pgPool) => {
         `
         SELECT
             review.idx,
-            review.product_idx,
+            review.product_idx AS "productIdx",
+            account.idx AS "accountIdx",
             account.nickname,
             review.content,
             review.score,
-            review.created_at
+            review.created_at AS "createdAt"
         FROM
             review
         JOIN
