@@ -45,7 +45,7 @@ class VerifyEmailSendDto {
     static createDto(user, body) {
         VerifyEmailSendDto.validate(body.email);
         return new VerifyEmailSendDto({
-            account: (user.authStatus = "true" ? user : "noLogin"),
+            account: user.authStatus === "true" ? user : "noLogin",
             email: body.email,
         });
     }

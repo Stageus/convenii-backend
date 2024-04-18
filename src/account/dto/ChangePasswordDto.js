@@ -64,7 +64,7 @@ class ChangePasswordDto {
         }
         const hashedPw = await bcrypt.hash(body.pw, 10);
         return new ChangePasswordDto({
-            account: (user.authStatus = "true" ? user : "noLogin"),
+            account: user.authStatus === "true" ? user : "noLogin",
             email: body.email,
             hashedPw: hashedPw,
         });
