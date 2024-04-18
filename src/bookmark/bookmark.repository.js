@@ -31,7 +31,7 @@ const insertBookmark = async (insertBookmarkDao, conn = pgPool) => {
  *
  * @param {SelectBookmarkWithAccountDao} selectBookmarkWithAccountDao
  * @param {pg.PoolClient} conn
- * @return {Promise<Bookmark>}
+ * @return {Promise<Bookmark|null>}
  */
 const selectBookmarkWithAccount = async (selectBookmarkWithAccountDao, conn = pgPool) => {
     const queryResult = await query(
@@ -52,7 +52,7 @@ const selectBookmarkWithAccount = async (selectBookmarkWithAccountDao, conn = pg
         conn
     );
 
-    return queryResult.rows[0];
+    return queryResult.rows[0] | null;
 };
 
 /**
