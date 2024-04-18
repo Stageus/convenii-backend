@@ -121,7 +121,6 @@ const deleteEvent = async (deleteEventByProductIdxDao, conn = pgPool) => {
  * @returns {Promise<pg.QueryResult>}
  */
 const insertEvent = async (insertEventDao, conn = pgPool) => {
-    console.log(insertEventDao);
     return await query(
         `
             INSERT INTO
