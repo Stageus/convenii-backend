@@ -51,8 +51,7 @@ const selectBookmarkWithAccount = async (selectBookmarkWithAccountDao, conn = pg
         [selectBookmarkWithAccountDao.account.idx, selectBookmarkWithAccountDao.productIdx],
         conn
     );
-
-    return queryResult.rows[0] | null;
+    return queryResult.rows[0];
 };
 
 /**
