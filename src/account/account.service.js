@@ -66,6 +66,7 @@ const verifyEmailCheck = async (verifyEmailCheckDto) => {
     }
     await setEmailVerified(verifyEmailCheckDto);
 };
+
 /**
  *
  * @param {SignUpDto} signUpDto
@@ -95,10 +96,12 @@ const signUp = async (signUpDto) => {
  * @returns {Promise<TokenEntity>}
  */
 const signIn = async (signInDto) => {
-    const account = selectAccountByEmail(signInDto);
+    const account = await selectAccountByEmail(signInDto);
     if (!account) {
         throw UnauthorizedException("login fail");
     }
+
+    console.log(signInDto);
     const passwordMatch = await bcrypt.compare(signInDto.pw, account.password);
     if (!passwordMatch) {
         throw new UnauthorizedException("login fail");
