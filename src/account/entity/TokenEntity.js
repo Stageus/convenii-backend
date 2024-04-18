@@ -26,7 +26,9 @@ class TokenEntity {
         const tokenPayload = {
             idx: account.idx,
             email: account.email,
-            rank: account.rankIdx,
+            nickname: account.nickname,
+            rankIdx: account.rankIdx,
+            createdAt: account.createdAt,
         };
 
         const tokenOptions = {
