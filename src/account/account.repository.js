@@ -18,7 +18,12 @@ const selectAccountByEmail = async (selectAccountByEmailDao, conn = pgPool) => {
     const queryResult = await query(
         `
             SELECT
-                * 
+                idx,
+                password,
+                email,
+                rank_idx AS "rankIdx",
+                created_at AS "createdAt",
+                nickname
             FROM 
                 account
             WHERE 
@@ -43,7 +48,12 @@ const selectAccountByNickname = async (selectAccountByNicknameDao, conn = pgPool
     const queryResult = await query(
         `
             SELECT
-                *
+                idx,
+                password,
+                email,
+                rank_idx AS "rankIdx",
+                created_at AS "createdAt",
+                nickname
             FROM
                 account
             WHERE
