@@ -4,7 +4,7 @@ const express = require("express");
 const https = require("https");
 const app = express();
 
-// const accountApi = require("./src/routers/account");
+const accountApi = require("./src/account/account.controller");
 // const bookmarkApi = require("./src/routers/bookmark");
 const productApi = require("./src/product/product.controller");
 const reviewApi = require("./src/review/review.controller");
@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(morganLogger);
 //Api---------------------------------------------------//
 
-// app.use("/account", accountApi);
+app.use("/account", accountApi);
 // app.use("/bookmark", bookmarkApi);
 app.use("/product", productApi);
 app.use("/review", reviewApi);
