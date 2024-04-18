@@ -28,7 +28,6 @@ const setEmailVerified = async (setEmailVerifiedDao) => {
  * @returns {Promise<string | null>}
  */
 const getEmailVerification = async (getEmailVerificationDao) => {
-    // return await redisClient.get(`verifiedEmails:${getEmailVerificationDao.email}`);
     return await redisClient.get(`emailVerification:${getEmailVerificationDao.email}`);
 };
 
@@ -45,4 +44,5 @@ module.exports = {
     setEmailWithCode,
     setEmailVerified,
     getEmailVerification,
+    checkEmailVerification,
 };
