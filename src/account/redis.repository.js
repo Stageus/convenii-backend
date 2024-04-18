@@ -1,4 +1,5 @@
 const redisClient = require("../util/module/redisClient");
+const CheckEmailVerificationDao = require("./dao/check-emailVerification.dao");
 const GetEmailVerificationDao = require("./dao/get-emailVerification.dao");
 const SetEmailVerifiedDao = require("./dao/set-emailVerifiedDao");
 const SetEmailWithCodeDao = require("./dao/set-emailWithCode.dao");
@@ -27,7 +28,17 @@ const setEmailVerified = async (setEmailVerifiedDao) => {
  * @returns {Promise<string | null>}
  */
 const getEmailVerification = async (getEmailVerificationDao) => {
-    return await redisClient.get(`verifiedEmails:${getEmailVerificationDao.email}`);
+    // return await redisClient.get(`verifiedEmails:${getEmailVerificationDao.email}`);
+    return await redisClient.get(`emailVerification:${getEmailVerificationDao.email}`);
+};
+
+/**
+ *
+ * @param {CheckEmailVerificationDao} checkEmailVerificationDao
+ * @returns {Promise<string | null>}
+ */
+const checkEmailVerification = async (checkEmailVerificationDao) => {
+    return await redisClient.get(`verifiedEmails:${checkEmailVerificationDao.email}`);
 };
 
 module.exports = {
