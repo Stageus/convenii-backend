@@ -6,6 +6,7 @@ const SignInDto = require("./dto/SignInDto");
 const SignUpDto = require("./dto/SignUpDto");
 const VerifyEmailCheckDto = require("./dto/VerifyEmailCheckDto");
 const VerifyEmailSendDto = require("./dto/VerifyEmailSendDto");
+const SignInResponseDto = require("./dto/responseDto/SignInResponseDto");
 const GetAccountResponseDto = require("./dto/responseDto/getAccountResponseDto");
 
 const router = require("express").Router();
@@ -56,8 +57,8 @@ router.post(
 router.post(
     "/login",
     wrapper(async (req, res, next) => {
-        await signIn(await SignInDto.createDto(req.body));
-        res.status(201).send();
+        const token = await signIn(await SignInDto.createDto(req.body));
+        res.status(200).send(SignInResponseDto.createDto(token));
     })
 );
 
