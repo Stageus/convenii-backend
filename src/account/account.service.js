@@ -72,7 +72,7 @@ const verifyEmailCheck = async (verifyEmailCheckDto) => {
 const signUp = async (signUpDto) => {
     const accountCheck = await selectAccountByEmail(signUpDto);
     if (accountCheck) {
-        throw BadRequestException("email duplicate");
+        throw new BadRequestException("email duplicate");
     }
     const verified = await checkEmailVerification(signUpDto);
     if (!verified) {
@@ -82,7 +82,7 @@ const signUp = async (signUpDto) => {
     const nicknameCheck = await selectAccountByNickname(signUpDto);
 
     if (nicknameCheck) {
-        throw BadRequestException("nickname duplicate");
+        throw new BadRequestException("nickname duplicate");
     }
     await insertAccount(signUpDto);
 };
@@ -95,7 +95,7 @@ const signUp = async (signUpDto) => {
 const signIn = async (signInDto) => {
     const account = await selectAccountByEmail(signInDto);
     if (!account) {
-        throw UnauthorizedException("login fail");
+        throw new UnauthorizedException("login fail");
     }
 
     const passwordMatch = await bcrypt.compare(signInDto.pw, account.password);
