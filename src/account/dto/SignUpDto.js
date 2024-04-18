@@ -60,7 +60,7 @@ class SignUpDto {
      *  pw: string,
      *  nickname: string
      * } body
-     * @returns {SignUpDto}
+     * @returns {Promise<SignUpDto>}
      */
     static async createDto(body) {
         SignUpDto.validate(body);

@@ -48,7 +48,7 @@ class ChangePasswordDto {
     }
 
     /**
-     * @param {Account| string} user
+     * @param {Account} user
      * @param {{
      *  email: string
      *  pw: string

@@ -46,12 +46,12 @@ class SignInDto {
      *  email: string,
      *  pw: string
      * }} body
-     * @returns {SignInDto}
+     * @returns {Promise<SignInDto>}
      */
     static async createDto(body) {
         SignInDto.validate(body);
         return await SignInDto({
-            email: body.email,
+            email: body.email.trim(),
             pw: hashedPw,
         });
     }

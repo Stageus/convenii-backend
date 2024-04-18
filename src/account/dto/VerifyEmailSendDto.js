@@ -36,7 +36,7 @@ class VerifyEmailSendDto {
         }
     }
     /**
-     * @param {Account| string} user
+     * @param {Account} user
      * @param {{
      *  email: string
      * }} body
