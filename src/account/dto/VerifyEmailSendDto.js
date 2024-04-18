@@ -1,5 +1,5 @@
 const Account = require("../model/account.model");
-const { BadRequestException } = require("../../util/module/Exception");
+const { BadRequestException, UnauthorizedException } = require("../../util/module/Exception");
 const patternTest = require("../../util/module/patternTest");
 
 class VerifyEmailSendDto {

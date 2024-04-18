@@ -65,7 +65,7 @@ class SignUpDto {
     static async createDto(body) {
         SignUpDto.validate(body);
         const hashedPw = await bcrypt.hash(body.pw, 10);
-        return await new SignUpDto({
+        return new SignUpDto({
             email: body.email,
             hashedPw: hashedPw,
             nickname: body.nickname,

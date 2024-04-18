@@ -1,4 +1,5 @@
 const Account = require("../model/account.model");
+const bcrypt = require("bcrypt");
 const { BadRequestException, UnauthorizedException } = require("../../util/module/Exception");
 const patternTest = require("../../util/module/patternTest");
 

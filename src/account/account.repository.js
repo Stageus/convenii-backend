@@ -115,6 +115,7 @@ const deleteAccount = async (deleteAccountDao, conn = pgPool) => {
  * @returns {Promise<void>}
  */
 const updateAccount = async (updateAccountDao, conn = pgPool) => {
+    console.log(updateAccountDao);
     await query(
         `
             UPDATE
@@ -122,9 +123,9 @@ const updateAccount = async (updateAccountDao, conn = pgPool) => {
             SET
                 password =$1
             WHERE
-                idx = $2
+                email = $2
         `,
-        [updateAccountDao.hashedPw, updateAccountDao.idx],
+        [updateAccountDao.hashedPw, updateAccountDao.email],
         conn
     );
 };

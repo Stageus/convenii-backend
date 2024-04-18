@@ -85,7 +85,7 @@ router.put(
     "/pw",
     accountAuth(),
     wrapper(async (req, res, next) => {
-        await changePassword(ChangePasswordDto.createDto(req.user, req.body));
+        await changePassword(await ChangePasswordDto.createDto(req.user, req.body));
         res.status(201).send();
     })
 );
@@ -95,7 +95,7 @@ router.put(
     "/pw/login",
     accountAuth(1),
     wrapper(async (req, res, next) => {
-        await changePassword(ChangePasswordDto.createDto(req.user, req.body));
+        await changePassword(await ChangePasswordDto.createDto(req.user, req.body));
         res.status(201).send();
         res.status(201).send();
     })
