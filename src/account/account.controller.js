@@ -1,5 +1,6 @@
 const accountAuth = require("../util/middleware/accountAuth");
-const { verifyEmailSend, verifyEmailCheck, signUp, withdrawAccount, changePassword } = require("./account.service");
+const wrapper = require("../util/module/wrapper");
+const { verifyEmailSend, verifyEmailCheck, signIn, signUp, withdrawAccount, changePassword } = require("./account.service");
 const ChangePasswordDto = require("./dto/ChangePasswordDto");
 const SignInDto = require("./dto/SignInDto");
 const SignUpDto = require("./dto/SignUpDto");
