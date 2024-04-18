@@ -1,4 +1,4 @@
-const Account = require("../../util/module/Account");
+const Account = require("../../account/model/account.model");
 
 class SelectProductsAllDao {
     /**

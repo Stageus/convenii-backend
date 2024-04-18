@@ -1,6 +1,7 @@
+const Account = require("../../account/model/account.model");
 class SelectProductDao {
     /**
-     * @type {number}
+     * @type {Account}
      */
     account;
 
