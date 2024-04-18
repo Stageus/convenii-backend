@@ -7,7 +7,7 @@ const app = express();
 // const accountApi = require("./src/routers/account");
 // const bookmarkApi = require("./src/routers/bookmark");
 const productApi = require("./src/product/product.controller");
-// const reviewApi = require("./src/routers/review");
+const reviewApi = require("./src/review/review.controller");
 
 const morganLogger = require("./src/util/middleware/morganLogger");
 //config-------------------------------------------------//
@@ -24,7 +24,7 @@ app.use(morganLogger);
 // app.use("/account", accountApi);
 // app.use("/bookmark", bookmarkApi);
 app.use("/product", productApi);
-// app.use("/review", reviewApi);
+app.use("/review", reviewApi);
 
 //error_handler---------------------------------//
 app.use((err, req, res, next) => {

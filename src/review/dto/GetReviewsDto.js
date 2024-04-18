@@ -25,19 +25,23 @@ class GetReviewsDto {
      * }} data
      */
     constructor(data) {
-        productIdx = data.productIdx;
+        this.productIdx = data.productIdx;
         this.limit = data.limit;
         this.offset = data.offset;
     }
 
     /**
      *
-     * @param {number} page
+     * @param {req.query} query
+     * @param {req.params} params
      * @throws {BadRequestException}
      */
-    static validate(page) {
-        if (!patternTest("page", page)) {
+    static validate(query, params) {
+        if (!patternTest("page", query.page)) {
             throw new BadRequestException("page error");
+        }
+        if (!patternTest("idx", params.productIdx)) {
+            throw new BadRequestException("productIdx error");
         }
     }
 
@@ -49,12 +53,12 @@ class GetReviewsDto {
      * @throws {BadRequestException}
      */
     static createDto(query, params) {
-        GetReviewsDto.validate(query.page);
+        GetReviewsDto.validate(query, params);
         const pageSizeOption = process.env.PAGE_SIZE_OPTION;
         return new GetReviewsDto({
             productIdx: params.productIdx,
             limit: pageSizeOption,
-            offset: (parseInt(params.page) - 1) * pageSizeOption,
+            offset: (parseInt(query.page) - 1) * pageSizeOption,
         });
     }
 }
