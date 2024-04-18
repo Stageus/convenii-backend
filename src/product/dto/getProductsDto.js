@@ -1,4 +1,4 @@
-const Account = require("../../util/module/Account");
+const Account = require("../../account/model/account.model");
 const { BadRequestException } = require("../../util/module/Exception");
 const patternTest = require("../../util/module/patternTest");
 
