@@ -7,7 +7,7 @@ const SignUpDto = require("./dto/SignUpDto");
 const VerifyEmailCheckDto = require("./dto/VerifyEmailCheckDto");
 const VerifyEmailSendDto = require("./dto/VerifyEmailSendDto");
 const SignInResponseDto = require("./dto/responseDto/SignInResponseDto");
-const GetAccountResponseDto = require("./dto/responseDto/getAccountResponseDto");
+const GetAccountResponseDto = require("./dto/responseDto/GetAccountResponseDto");
 
 const router = require("express").Router();
 

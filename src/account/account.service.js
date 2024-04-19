@@ -9,7 +9,7 @@ const SignUpDto = require("./dto/SignUpDto");
 const VerifyEmailCheckDto = require("./dto/VerifyEmailCheckDto");
 const VerifyEmailSendDto = require("./dto/VerifyEmailSendDto");
 const TokenEntity = require("./entity/TokenEntity");
-const AccountEntity = require("./entity/accountEntity");
+const AccountEntity = require("./entity/AccountEntity");
 const { setEmailWithCode, getEmailVerification, setEmailVerified, checkEmailVerification } = require("./redis.repository");
 const bcrypt = require("bcrypt");
 

@@ -1,4 +1,4 @@
-const AccountEntity = require("../../entity/accountEntity");
+const AccountEntity = require("../../entity/AccountEntity");
 
 class GetAccountResponseDto {
     /**
