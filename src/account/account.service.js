@@ -32,8 +32,13 @@ const checkLogin = async (checkLoginDto) => {
  * @returns {Promise<void>}
  */
 const verifyEmailSend = async (verifyEmailSendDto) => {
-    const { email } = verifyEmailSendDto;
-
+    const { email, account } = verifyEmailSendDto;
+    if (account === "noLogin") {
+        const alreadyHaveUser = selectAccountByEmail(email);
+        if (alreadyHaveUser) {
+            throw UnauthorizedException("already have email");
+        }
+    }
     const verificationCode = generateVerificationCode();
 
     await sendVerificationEmail(email, verificationCode);
