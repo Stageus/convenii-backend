@@ -8,6 +8,7 @@ const VerifyEmailCheckDto = require("./dto/VerifyEmailCheckDto");
 const VerifyEmailSendDto = require("./dto/VerifyEmailSendDto");
 const SignInResponseDto = require("./dto/responseDto/SignInResponseDto");
 const GetAccountResponseDto = require("./dto/responseDto/GetAccountResponseDto");
+const nullResponse = require("../util/module/nullResponse");
 
 const router = require("express").Router();
 
@@ -21,7 +22,7 @@ router.post(
     accountAuth(),
     wrapper(async (req, res, next) => {
         await verifyEmailSend(VerifyEmailSendDto.createDto(req.user, req.body));
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 
@@ -31,7 +32,7 @@ router.post(
     accountAuth(1),
     wrapper(async (req, res, next) => {
         await verifyEmailSend(VerifyEmailSendDto.createDto(req.user, req.body));
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 
@@ -40,7 +41,7 @@ router.post(
     "/verify-email/check",
     wrapper(async (req, res, next) => {
         await verifyEmailCheck(VerifyEmailCheckDto.createDto(req.body));
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 
@@ -49,7 +50,7 @@ router.post(
     "/",
     wrapper(async (req, res, next) => {
         await signUp(await SignUpDto.createDto(req.body));
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 
@@ -77,7 +78,7 @@ router.delete(
     accountAuth(1),
     wrapper(async (req, res, next) => {
         await withdrawAccount(req.user);
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 // 비로그인 상태에서 비밀번호 변경하기
@@ -96,8 +97,7 @@ router.put(
     accountAuth(1),
     wrapper(async (req, res, next) => {
         await changePassword(await ChangePasswordDto.createDto(req.user, req.body));
-        res.status(201).send();
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 module.exports = router;

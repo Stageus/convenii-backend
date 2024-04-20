@@ -2,6 +2,7 @@ const router = require("express").Router();
 
 const ProductResponseDto = require("../product/dto/responseDto/ProductResponseDto");
 const accountAuth = require("../util/middleware/accountAuth");
+const nullResponse = require("../util/module/nullResponse");
 const wrapper = require("../util/module/wrapper");
 const { createBookmark, getBookmarkedProduct, removeBookmark } = require("./bookmark.service");
 const CreateBookmarkDto = require("./dto/CreateBookmarkDto");
@@ -15,7 +16,7 @@ router.post(
     wrapper(async (req, res, next) => {
         const user = req.user;
         await createBookmark(CreateBookmarkDto.createDto(user, req.params));
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 
@@ -39,7 +40,7 @@ router.delete(
     wrapper(async (req, res, next) => {
         const user = req.user;
         await removeBookmark(RemoveBookmarkDto.createDto(user, req.params));
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 
