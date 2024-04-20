@@ -36,7 +36,7 @@ const verifyEmailSend = async (verifyEmailSendDto) => {
     if (account === "noLogin") {
         const alreadyHaveUser = selectAccountByEmail(email);
         if (alreadyHaveUser) {
-            throw UnauthorizedException("already have email");
+            throw new UnauthorizedException("already have email");
         }
     }
     const verificationCode = generateVerificationCode();
