@@ -34,7 +34,7 @@ const checkLogin = async (checkLoginDto) => {
 const verifyEmailSend = async (verifyEmailSendDto) => {
     const { email, account } = verifyEmailSendDto;
     if (account === "noLogin") {
-        const alreadyHaveUser = selectAccountByEmail(email);
+        const alreadyHaveUser = await selectAccountByEmail(email);
         if (alreadyHaveUser) {
             throw new UnauthorizedException("already have email");
         }
