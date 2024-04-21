@@ -64,7 +64,7 @@ const verifyEmailCheck = async (verifyEmailCheckDto) => {
 /**
  *
  * @param {SignUpDto} signUpDto
- * @returns {Promise<void>}
+ * @returns {Promise<TokenEntity>}
  */
 const signUp = async (signUpDto) => {
     const accountCheck = await selectAccountByEmail(signUpDto);
@@ -81,7 +81,8 @@ const signUp = async (signUpDto) => {
     if (nicknameCheck) {
         throw new BadRequestException("nickname duplicate");
     }
-    await insertAccount(signUpDto);
+    const account = await insertAccount(signUpDto);
+    return TokenEntity.createEntity(account);
 };
 
 /**

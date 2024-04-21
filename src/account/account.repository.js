@@ -72,19 +72,27 @@ const selectAccountByNickname = async (selectAccountByNicknameDao, conn = pgPool
  *
  * @param {InsertAccountDao} insertAccountDao
  * @param {pg.PoolClient} conn
- * @returns {Promise<void>}
+ * @returns {Promise<AcountWithoutAuth>}
  */
 const insertAccount = async (insertAccountDao, conn = pgPool) => {
-    await query(
+    const queryResult = await query(
         `
             INSERT INTO account
                 (email,password,nickname)
             VALUES
                 ($1,$2,$3)
+            RETURNING
+                idx,
+                password,
+                email,
+                rank_idx AS "rankIdx",
+                created_at AS "createdAt",
+                nickname
         `,
         [insertAccountDao.email, insertAccountDao.hashedPw, insertAccountDao.nickname],
         conn
     );
+    return queryResult.rows[0];
 };
 
 /**

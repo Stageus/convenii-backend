@@ -49,8 +49,8 @@ router.post(
 router.post(
     "/",
     wrapper(async (req, res, next) => {
-        await signUp(await SignUpDto.createDto(req.body));
-        res.status(201).send(nullResponse);
+        const token = await signUp(await SignUpDto.createDto(req.body));
+        res.status(200).send(SignInResponseDto.createDto(token));
     })
 );
 
