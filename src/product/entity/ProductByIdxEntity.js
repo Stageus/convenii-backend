@@ -87,13 +87,17 @@ class ProductByIdxEntity {
      * @param {Event} eventWithMonth
      */
     static createEntityFromDao(product, eventWithMonth) {
+        let score = product.score;
+        if (product.score === null) {
+            score = 0;
+        }
         return new ProductByIdxEntity({
             idx: product.idx,
             categoryIdx: product.categoryIdx,
             name: product.name,
             price: product.price,
             productImg: product.productImg,
-            score: product.score,
+            score: score,
             createdAt: product.createdAt,
             bookmarked: product.bookmarked,
             eventInfo: eventWithMonth?.map((events) => EventInfoEntity.createEntity(events)),
