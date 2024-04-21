@@ -1,6 +1,6 @@
 const Account = require("../model/account.model");
 const bcrypt = require("bcrypt");
-const { BadRequestException, UnauthorizedException } = require("../../util/module/Exception");
+const { BadRequestException, UnauthorizedException, ForbiddenException } = require("../../util/module/Exception");
 const patternTest = require("../../util/module/patternTest");
 
 class ChangePasswordDto {
@@ -60,7 +60,7 @@ class ChangePasswordDto {
         ChangePasswordDto.validate(body);
         if (user.authStatus === "true") {
             if (user.email !== body.email) {
-                throw new UnauthorizedException("email error");
+                throw new ForbiddenException("email 과 token이 일치하지 않음");
             }
         }
         const hashedPw = await bcrypt.hash(body.pw, 10);
