@@ -1,5 +1,5 @@
 const Account = require("../model/account.model");
-const { BadRequestException, UnauthorizedException } = require("../../util/module/Exception");
+const { BadRequestException, UnauthorizedException, ForbiddenException } = require("../../util/module/Exception");
 const patternTest = require("../../util/module/patternTest");
 
 class VerifyEmailSendDto {
@@ -46,7 +46,7 @@ class VerifyEmailSendDto {
         VerifyEmailSendDto.validate(body.email);
         if (user.authStatus === "true") {
             if (user.email !== body.email) {
-                throw new UnauthorizedException("email error");
+                throw new ForbiddenException("email token 일치하지 않음");
             }
         }
         return new VerifyEmailSendDto({

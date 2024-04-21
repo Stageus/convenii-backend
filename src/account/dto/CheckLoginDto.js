@@ -28,9 +28,13 @@ class CheckLoginDto {
      * @returns
      */
     static createDto(headers, needRank) {
+        let token = null;
+        if (headers.authorization) {
+            token = headers.authorization.split(" ")[1];
+        }
         return new CheckLoginDto({
             needRank: needRank,
-            token: headers.authorization,
+            token: token,
         });
     }
 }
