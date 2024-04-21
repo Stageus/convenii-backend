@@ -79,13 +79,17 @@ class ProductEntity {
      * @returns {ProductEntity}
      */
     static createEntityFromDao(product) {
+        let score = product.score;
+        if (product.score === null) {
+            score = 0;
+        }
         return new ProductEntity({
             idx: product.idx,
             categoryIdx: product.categoryIdx,
             name: product.name,
             price: product.price,
             productImg: product.productImg,
-            score: product.score,
+            score: score,
             createdAt: product.createdAt,
             bookmarked: product.bookmarked,
             events: product.events?.map((event) => EventEntity.createEntity(event)),
