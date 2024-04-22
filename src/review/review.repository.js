@@ -63,7 +63,7 @@ const selectReviews = async (selectReviewsDao, conn = pgPool) => {
             account.nickname,
             review.content,
             review.score,
-            review.created_at AS "createdAt"
+            (review.created_at + INTERVAL '9 hours') AS "createdAt"
         FROM
             review
         JOIN
