@@ -6,6 +6,7 @@ const { createReview, getReviews } = require("./review.service");
 const CreateReviewDto = require("./dto/CreateReviewDto");
 const GetReviewsDto = require("./dto/GetReviewsDto");
 const ReviewResponseDto = require("./dto/responseDto/reviewResponseDto");
+const nullResponse = require("../util/module/nullResponse");
 
 /////////////-------review---------////////////////////
 //  POST/product/:productIdx        => 리뷰 추가하기
@@ -18,7 +19,7 @@ router.post(
     accountAuth(1),
     wrapper(async (req, res, next) => {
         await createReview(CreateReviewDto.createDto(req.user, req.body, req.params));
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 

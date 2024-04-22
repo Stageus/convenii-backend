@@ -12,6 +12,7 @@ const CreateProductDto = require("./dto/CreateProductDto");
 const accountAuth = require("../util/middleware/accountAuth");
 const AmendProductDto = require("./dto/AmendProductDto");
 const RemoveProductDto = require("./dto/RemoveProductDto");
+const nullResponse = require("../util/module/nullResponse");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -79,7 +80,7 @@ router.post(
     wrapper(async (req, res, next) => {
         await createProduct(CreateProductDto.createDto(req.file, req.body));
 
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 
@@ -91,7 +92,7 @@ router.put(
     wrapper(async (req, res, next) => {
         await amendProduct(AmendProductDto.createDto(req.file, req.body, req.params));
 
-        res.status(201).send();
+        res.status(201).send(nullResponse);
     })
 );
 
@@ -101,7 +102,7 @@ router.delete(
     accountAuth(2),
     wrapper(async (req, res, next) => {
         await removeProduct(RemoveProductDto.createDto(req.params));
-        res.status(204).send();
+        res.status(204).send(nullResponse);
     })
 );
 
