@@ -81,7 +81,7 @@ class ProductEntity {
     static createEntityFromDao(product) {
         let score = product.score;
         if (product.score === null) {
-            score = 0;
+            score = "0";
         }
         return new ProductEntity({
             idx: product.idx,
