@@ -24,12 +24,13 @@ class ProductResponseDto {
      * @param {
      *  data: any,
      *  authStatus: LoginStatus,
+     *  rankIdx: number
      * } param
      */
     constructor(param) {
         this.data = param.data;
         this.authStatus = param.authStatus;
-        this.rankIdx = 0;
+        this.rankIdx = param.rankIdx;
     }
 
     /**
