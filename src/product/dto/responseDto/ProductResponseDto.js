@@ -36,6 +36,7 @@ class ProductResponseDto {
         return new ProductResponseDto({
             data: productList,
             authStatus: user.authStatus,
+            rankIdx: user.rankIdx,
         });
     }
 
@@ -45,7 +46,8 @@ class ProductResponseDto {
                 product: this.data,
             },
 
-            authstatus: this.authStatus,
+            authStatus: this.authStatus,
+            rankIdx: this.rankIdx,
         };
     }
     products() {
@@ -53,7 +55,8 @@ class ProductResponseDto {
             data: {
                 productList: this.data,
             },
-            authstatus: this.authStatus,
+            authStatus: this.authStatus,
+            rankIdx: this.rankIdx,
         };
     }
 }
