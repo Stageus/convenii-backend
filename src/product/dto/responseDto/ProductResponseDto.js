@@ -16,6 +16,10 @@ class ProductResponseDto {
     authStatus;
 
     /**
+     * @type {number}
+     */
+    rankIdx;
+    /**
      *
      * @param {
      *  data: any,
@@ -25,6 +29,7 @@ class ProductResponseDto {
     constructor(param) {
         this.data = param.data;
         this.authStatus = param.authStatus;
+        this.rankIdx = 0;
     }
 
     /**
