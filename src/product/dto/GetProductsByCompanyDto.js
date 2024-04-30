@@ -97,7 +97,7 @@ class GetProductsByCompanyDto {
         return new GetProductsByCompanyDto({
             account: user,
             companyIdx: params.companyIdx,
-            limit: query.option === "main" ? process.env.PAGE_SIZE_OPTION : 3,
+            limit: query.option === "main" ? 3 : process.env.PAGE_SIZE_OPTION,
             offset: query.option === "main" ? 0 : (parseInt(query.page) - 1) * process.env.PAGE_SIZE_OPTION,
             keyword: "",
             categoryFilter: [1, 2, 3, 4, 5, 6],
