@@ -89,7 +89,7 @@ class ProductByIdxEntity {
     static createEntityFromDao(product, eventWithMonth) {
         let score = product.score;
         if (product.score === null) {
-            score = 0;
+            score = "0";
         }
         return new ProductByIdxEntity({
             idx: product.idx,
