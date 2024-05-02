@@ -47,13 +47,13 @@ class CreateReviewDto {
      */
     static validate(body, params) {
         if (!patternTest("idx", params.productIdx)) {
-            throw BadRequestException("productIdx error");
+            throw new BadRequestException("productIdx error");
         }
         if (!patternTest("content", body.content)) {
-            throw BadRequestException("productIdx error");
+            throw new BadRequestException("productIdx error");
         }
         if (!patternTest("score", body.score)) {
-            throw BadRequestException("productIdx error");
+            throw new BadRequestException("productIdx error");
         }
     }
 
