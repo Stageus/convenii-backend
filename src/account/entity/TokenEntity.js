@@ -33,7 +33,7 @@ class TokenEntity {
 
         const tokenOptions = {
             issuer: account.nickname,
-            expiresIn: "300m",
+            expiresIn: "30d",
         };
         return new TokenEntity({
             accessToken: issueToken(tokenPayload, tokenOptions),
