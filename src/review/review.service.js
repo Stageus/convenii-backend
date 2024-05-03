@@ -35,9 +35,9 @@ const createReview = async (createReviewDto) => {
  */
 const getReviews = async (getReviewsDto) => {
     const reviewList = await selectReviews(getReviewsDto);
-    if (reviewList.length === 0) {
-        throw new NotFoundException("no reiviews");
-    }
+    // if (reviewList.length === 0) {
+    //     throw new NotFoundException("no reiviews");
+    // }
 
     return reviewList.map((review) => ReviewEntity.createEntityFromDao(review));
 };
