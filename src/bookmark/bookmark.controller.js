@@ -2,6 +2,7 @@ const router = require("express").Router();
 
 const ProductResponseDto = require("../product/dto/responseDto/ProductResponseDto");
 const accountAuth = require("../util/middleware/accountAuth");
+const { NotFoundException } = require("../util/module/Exception");
 const nullResponse = require("../util/module/nullResponse");
 const wrapper = require("../util/module/wrapper");
 const { createBookmark, getBookmarkedProduct, removeBookmark } = require("./bookmark.service");
@@ -26,10 +27,20 @@ router.get(
     accountAuth(1),
     wrapper(async (req, res, next) => {
         const user = req.user;
-        const productList = await getBookmarkedProduct(GetBookmarkedProductDto.createDto(user, req.query));
-
-        console.log(productList);
-        res.status(200).send(ProductResponseDto.create(productList, user).products());
+        try {
+            const productList = await getBookmarkedProduct(GetBookmarkedProductDto.createDto(user, req.query));
+            res.status(200).send(ProductResponseDto.create(productList, user).products());
+        } catch (err) {
+            if (err instanceof NotFoundException) {
+                res.status(200).send({
+                    data: "no product",
+                    authStatus: user.authStatus,
+                    rankIdx: user.rankIdx,
+                });
+            } else {
+                throw err;
+            }
+        }
     })
 );
 
