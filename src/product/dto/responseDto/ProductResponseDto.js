@@ -46,6 +46,19 @@ class ProductResponseDto {
         });
     }
 
+    /**
+     *
+     * @param {Account} user
+     */
+    static createNull(user) {
+        return new ProductResponseDto({
+            data: {
+                productList: [],
+            },
+            authStatus: user.authStatus,
+            rankIdx: user.rankIdx,
+        });
+    }
     product() {
         return {
             data: {

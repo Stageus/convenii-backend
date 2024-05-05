@@ -32,11 +32,7 @@ router.get(
             res.status(200).send(ProductResponseDto.create(productList, user).products());
         } catch (err) {
             if (err instanceof NotFoundException) {
-                res.status(200).send({
-                    data: [],
-                    authStatus: user.authStatus,
-                    rankIdx: user.rankIdx,
-                });
+                res.status(200).send(ProductResponseDto.createNull(user));
             } else {
                 throw err;
             }
