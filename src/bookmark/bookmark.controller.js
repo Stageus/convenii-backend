@@ -24,7 +24,7 @@ router.post(
 // 북마크 가져오기
 router.get(
     "/all",
-    accountAuth(1),
+    accountAuth(0),
     wrapper(async (req, res, next) => {
         const user = req.user;
         try {
