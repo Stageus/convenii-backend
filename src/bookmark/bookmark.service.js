@@ -45,7 +45,7 @@ const removeBookmark = async (removeBookmarkDto) => {
 const getBookmarkedProduct = async (getBookmarkedProductDto) => {
     const bookmarkedProductList = await selectBookmarkedProductIdx(getBookmarkedProductDto);
     if (bookmarkedProductList.length === 0) {
-        throw NotFoundException("no products");
+        throw new NotFoundException("no products");
     }
 
     const productList = await selectProductsBookmarked(getBookmarkedProductDto);
