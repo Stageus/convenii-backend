@@ -33,7 +33,7 @@ router.get(
         } catch (err) {
             if (err instanceof NotFoundException) {
                 res.status(200).send({
-                    data: "no product",
+                    data: [],
                     authStatus: user.authStatus,
                     rankIdx: user.rankIdx,
                 });
