@@ -92,13 +92,16 @@ class GetProductsBySearchDto {
             categoryFilter: query.categoryFilter,
         });
 
+        const categoryFilter = JSON.parse(query.categoryFilter);
+        const eventFilter = JSON.parse(query.eventFilter);
+
         return new GetProductsBySearchDto({
             account: user,
             keyword: query.keyword,
             limit: 10,
             offset: (query.page - 1) * 10,
-            categoryFilter: query.categoryFilter && query.categoryFilter.length > 0 ? query.categoryFilter : [1, 2, 3, 4, 5, 6],
-            eventFilter: query.eventFilter && query.eventFilter.length > 0 ? query.eventFilter : [1, 2, 3, 4, 5, 6],
+            eventFilter: eventFilter && eventFilter.length > 0 ? eventFilter : [1, 2, 3, 4, 5, 6],
+            categoryFilter: categoryFilter && categoryFilter.length > 0 ? categoryFilter : [1, 2, 3, 4, 5, 6],
         });
     }
 }
