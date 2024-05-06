@@ -32,10 +32,16 @@ router.get(
     accountAuth(),
     wrapper(async (req, res, next) => {
         const user = req.user;
-
-        const productList = await getProductsAll(GetProductsDto.createDto(user, req.query));
-
-        res.status(200).send(ProductResponseDto.create(productList, user).products());
+        try {
+            const productList = await getProductsAll(GetProductsDto.createDto(user, req.query));
+            res.status(200).send(ProductResponseDto.create(productList, user).products());
+        } catch (err) {
+            if (err instanceof NotFoundException) {
+                res.status(200).send(ProductResponseDto.createNull(user));
+            } else {
+                throw err;
+            }
+        }
     })
 );
 
@@ -46,9 +52,16 @@ router.get(
     wrapper(async (req, res, next) => {
         const user = req.user;
 
-        const productList = await getProductsAll(GetProductsByCompanyDto.createDto(user, req.query, req.params));
-
-        res.status(200).send(ProductResponseDto.create(productList, user).products());
+        try {
+            const productList = await getProductsAll(GetProductsByCompanyDto.createDto(user, req.query, req.params));
+            res.status(200).send(ProductResponseDto.create(productList, user).products());
+        } catch (err) {
+            if (err instanceof NotFoundException) {
+                res.status(200).send(ProductResponseDto.createNull(user));
+            } else {
+                throw err;
+            }
+        }
     })
 );
 
