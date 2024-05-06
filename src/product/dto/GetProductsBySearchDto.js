@@ -91,7 +91,8 @@ class GetProductsBySearchDto {
             eventFilter: query.eventFilter,
             categoryFilter: query.categoryFilter,
         });
-
+        console.log(query.categoryFilter);
+        console.log(query.eventFilter);
         const categoryFilter = JSON.parse(query.categoryFilter);
         const eventFilter = JSON.parse(query.eventFilter);
 
