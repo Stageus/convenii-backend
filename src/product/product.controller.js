@@ -13,6 +13,7 @@ const accountAuth = require("../util/middleware/accountAuth");
 const AmendProductDto = require("./dto/AmendProductDto");
 const RemoveProductDto = require("./dto/RemoveProductDto");
 const nullResponse = require("../util/module/nullResponse");
+const { NotFoundException } = require("../util/module/Exception");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -57,8 +58,16 @@ router.get(
     accountAuth(),
     wrapper(async (req, res, next) => {
         const user = req.user;
-        const productList = await getProductsAll(GetProductsBySearchDto.createDto(user, req.query));
-        res.status(200).send(ProductResponseDto.create(productList, user).products());
+        try {
+            const productList = await getProductsAll(GetProductsBySearchDto.createDto(user, req.query));
+            res.status(200).send(ProductResponseDto.create(productList, user).products());
+        } catch (err) {
+            if (err instanceof NotFoundException) {
+                res.status(200).send(ProductResponseDto.createNull(user));
+            } else {
+                throw err;
+            }
+        }
     })
 );
 
