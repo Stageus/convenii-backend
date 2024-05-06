@@ -28,14 +28,14 @@ const RemoveProductDto = require("./dto/RemoveProductDto");
  */
 const getProductsAll = async (productsDto) => {
     const productList = await selectProducts(productsDto);
-    if (productList.length === 0) {
-        throw new NotFoundException("no products");
-    }
+    // if (productList.length === 0) {
+    //     throw new NotFoundException("no products");
+    // }
 
-    const eventList = await selectEvents();
-    if (eventList.length === 0) {
-        throw new NotFoundException("no events");
-    }
+    // const eventList = await selectEvents();
+    // if (eventList.length === 0) {
+    //     throw new NotFoundException("no events");
+    // }
 
     const eventMap = eventList.reduce((acc, event) => {
         acc[event.productIdx] = event.eventInfo;

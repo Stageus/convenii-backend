@@ -97,8 +97,8 @@ class GetProductsBySearchDto {
             keyword: query.keyword,
             limit: 10,
             offset: (query.page - 1) * 10,
-            categoryFilter: !query.categoryFilter ? [1, 2, 3, 4, 5, 6] : query.categoryFilter,
-            eventFilter: !query.eventFilter ? [1, 2, 3, 4, 5, 6] : query.eventFilter,
+            categoryFilter: query.categoryFilter && query.categoryFilter.length > 0 ? query.categoryFilter : [1, 2, 3, 4, 5, 6],
+            eventFilter: query.eventFilter && query.eventFilter.length > 0 ? query.eventFilter : [1, 2, 3, 4, 5, 6],
         });
     }
 }
