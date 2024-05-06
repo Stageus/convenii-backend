@@ -6,7 +6,7 @@ const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductByIdxEntity = require("./entity/ProductByIdxEntity");
 const ProductEntity = require("./entity/ProductEntity");
-const { selectProducts, selectProductByIdx, insertProduct, updateProduct, deleteProduct } = require("./product.repository");
+const { selectProducts, selectProductByIdx, insertProduct, updateProduct, deleteProduct, selectProductsByCompany } = require("./product.repository");
 const { selectEvents, selectEventByProduct, insertEvent, deleteEvent } = require("../event/event.repository");
 const pgPool = require("../util/module/pgPool");
 const AmendProductDto = require("./dto/AmendProductDto");
@@ -52,6 +52,38 @@ const getProductsAll = async (productsDto) => {
     return productsWithEvents.map((product) => ProductEntity.createEntityFromDao(product));
 };
 
+/**
+ *
+ * @param {ProductsDto} ProductsDto
+ * @returns {Promise<{
+ *  productList: ProductEntity[],
+ * }}
+ */
+const getProductsMain = async (getProductsByCompanyDto) => {
+    const productList = await selectProductsByCompany(getProductsByCompanyDto);
+    if (productList.length === 0) {
+        throw new NotFoundException("no products");
+    }
+
+    const eventList = await selectEvents();
+    if (eventList.length === 0) {
+        throw new NotFoundException("no events");
+    }
+
+    const eventMap = eventList.reduce((acc, event) => {
+        acc[event.productIdx] = event.eventInfo;
+        return acc;
+    }, {});
+
+    const productsWithEvents = productList
+        .filter((product) => eventMap[product.idx])
+        .map((product) => ({
+            ...product,
+            events: eventMap[product.idx],
+        }));
+
+    return productsWithEvents.map((product) => ProductEntity.createEntityFromDao(product));
+};
 /**
  *
  * @param {GetProductByIdxDto} getProductByIdxDto
