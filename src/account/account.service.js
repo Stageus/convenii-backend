@@ -31,13 +31,15 @@ const checkLogin = async (checkLoginDto) => {
  * @param {VerifyEmailSendDto} verifyEmailSendDto
  * @returns {Promise<void>}
  */
-const verifyEmailSend = async (verifyEmailSendDto) => {
+const verifyEmailSend = async (verifyEmailSendDto, mode = "signUp") => {
     const { email, account } = verifyEmailSendDto;
 
     if (account === "noLogin") {
         const alreadyHaveUser = await selectAccountByEmail({ email: email });
-        if (alreadyHaveUser) {
+        if (alreadyHaveUser && mode === "signUp") {
             throw new UnauthorizedException("already have email");
+        } else if (!alreadyHaveUser && mode === "recovery") {
+            throw new UnauthorizedException("no email");
         }
     }
     const verificationCode = generateVerificationCode();

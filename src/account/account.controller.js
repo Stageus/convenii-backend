@@ -26,12 +26,12 @@ router.post(
     })
 );
 
-//이메일 인증번호 발급 (로그인 상태시)
+//이메일 인증번호 발급 (로그인 상태가 아닌경우)
 router.post(
-    "/verify-email/send/login",
-    accountAuth(1),
+    "/verify-email/send/recovery",
+    accountAuth(),
     wrapper(async (req, res, next) => {
-        await verifyEmailSend(VerifyEmailSendDto.createDto(req.user, req.body));
+        await verifyEmailSend(VerifyEmailSendDto.createDto(req.user, req.body), "recovery");
         res.status(201).send(nullResponse);
     })
 );
