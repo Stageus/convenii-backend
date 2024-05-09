@@ -100,7 +100,6 @@ router.post(
     uploadImg,
     accountAuth(2),
     wrapper(async (req, res, next) => {
-        console.log(req);
         await createProduct(CreateProductDto.createDto(req.file, req.body));
 
         res.status(201).send(nullResponse);

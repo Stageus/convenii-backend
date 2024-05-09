@@ -122,7 +122,6 @@ class CreateProductDto {
      */
     withProductIdx(data) {
         this.productIdx = data.idx;
-        console.log(this);
         return this;
     }
 }

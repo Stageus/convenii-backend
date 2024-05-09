@@ -123,7 +123,6 @@ const deleteAccount = async (deleteAccountDao, conn = pgPool) => {
  * @returns {Promise<void>}
  */
 const updateAccount = async (updateAccountDao, conn = pgPool) => {
-    console.log(updateAccountDao);
     await query(
         `
             UPDATE
