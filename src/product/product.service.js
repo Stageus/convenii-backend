@@ -165,6 +165,7 @@ const removeProduct = async (removeProductDto) => {
 module.exports = {
     getProductsAll,
     getProductByIdx,
+    getProductsMain,
     createProduct,
     amendProduct,
     removeProduct,

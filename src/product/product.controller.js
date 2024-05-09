@@ -4,7 +4,7 @@ const uploadImg = require("../util/middleware/uploadImg");
 const wrapper = require("../util/module/wrapper");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductResponseDto = require("./dto/responseDto/ProductResponseDto");
-const { getProductsAll, getProductByIdx, createProduct, amendProduct, removeProduct } = require("./product.service");
+const { getProductsAll, getProductByIdx, createProduct, amendProduct, removeProduct, getProductsMain } = require("./product.service");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductByIdxDto = require("./dto/GetProductByIdxDto");
@@ -53,7 +53,7 @@ router.get(
         const user = req.user;
 
         try {
-            const productList = await getProductsAll(GetProductsByCompanyDto.createDto(user, req.query, req.params));
+            const productList = await getProductsMain(GetProductsByCompanyDto.createDto(user, req.query, req.params));
             res.status(200).send(ProductResponseDto.create(productList, user).products());
         } catch (err) {
             if (err instanceof NotFoundException) {
