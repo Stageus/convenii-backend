@@ -33,17 +33,18 @@ const checkLogin = async (checkLoginDto) => {
  */
 const verifyEmailSend = async (verifyEmailSendDto, mode = "signUp") => {
     const { email, account } = verifyEmailSendDto;
+    const alreadyHaveUser = await selectAccountByEmail({ email: email });
 
-    if (account === "noLogin") {
-        const alreadyHaveUser = await selectAccountByEmail({ email: email });
-        if (alreadyHaveUser && mode === "signUp") {
-            throw new UnauthorizedException("already have email");
-        } else if (!alreadyHaveUser && mode === "recovery") {
+    if (mode === "recovery") {
+        if (!alreadyHaveUser) {
             throw new UnauthorizedException("no email");
         }
-    } else {
-        if (mode === "recovery") {
+    } else if (mode === "signUp") {
+        if (account !== "noLogin") {
             throw new ForbiddenException("already logged in");
+        }
+        if (alreadyHaveUser) {
+            throw new UnauthorizedException("already have email");
         }
     }
 
