@@ -41,7 +41,12 @@ const verifyEmailSend = async (verifyEmailSendDto, mode = "signUp") => {
         } else if (!alreadyHaveUser && mode === "recovery") {
             throw new UnauthorizedException("no email");
         }
+    } else {
+        if (mode === "recovery") {
+            throw new ForbiddenException("already logged in");
+        }
     }
+
     const verificationCode = generateVerificationCode();
 
     await sendVerificationEmail(email, verificationCode);
