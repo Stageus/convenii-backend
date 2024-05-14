@@ -6,11 +6,12 @@ const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductByIdxEntity = require("./entity/ProductByIdxEntity");
 const ProductEntity = require("./entity/ProductEntity");
-const { selectProducts, selectProductByIdx, insertProduct, updateProduct, deleteProduct, selectProductsByCompany } = require("./product.repository");
+const { selectProducts, selectProductByIdx, insertProduct, updateProduct, deleteProduct, selectProductsByCompany, selectProductsCountByCompany, selectProductsByIdxList } = require("./product.repository");
 const { selectEvents, selectEventByProduct, insertEvent, deleteEvent } = require("../event/event.repository");
 const pgPool = require("../util/module/pgPool");
 const AmendProductDto = require("./dto/AmendProductDto");
 const RemoveProductDto = require("./dto/RemoveProductDto");
+const { setMainProduct, getMainProduct } = require("../account/redis.repository");
 
 /**
  * @typedef {GetProductsDto|| GetProductsByCompanyDto || GetProductsBySearchDto}  ProductsDto
@@ -84,6 +85,7 @@ const getProductsMain = async (getProductsByCompanyDto) => {
 
     return productsWithEvents.map((product) => ProductEntity.createEntityFromDao(product));
 };
+
 /**
  *
  * @param {GetProductByIdxDto} getProductByIdxDto
@@ -162,6 +164,72 @@ const amendProduct = async (amendProductDto) => {
 const removeProduct = async (removeProductDto) => {
     await deleteProduct(removeProductDto);
 };
+
+const cacheMainProduct = async (cacheMainProductDto) => {
+    const productCount = await selectProductsCountByCompany({
+        companyIdx: cacheMainProductDto.companyIdx,
+    });
+    const mainList = await selectProductsByCompany({
+        companyIdx: cacheMainProductDto.companyIdx,
+        limit: 3,
+        offset: 0,
+    });
+    const mainProductList = mainList.map((row) => row.productIdx);
+
+    await setMainProduct({
+        companyIdx: cacheMainProductDto.companyIdx,
+        option: "main",
+        productIdxList: mainProductList,
+    });
+
+    for (let i = 0; i < productCount; i = i + 10) {
+        const productList = await selectProductsByCompany({
+            companyIdx: cacheMainProductDto.companyIdx,
+            limit: 10,
+            offset: i,
+        });
+        const mainProductList = productList.map((row) => row.productIdx);
+
+        await setMainProduct({
+            companyIdx: cacheMainProductDto.companyIdx,
+            option: i / 10 + 1,
+            productIdxList: mainProductList,
+        });
+    }
+};
+
+const getCachedMainProduct = async (getCachedMainProductDto) => {
+    const productIdxList = await getMainProduct({
+        companyIdx: getCachedMainProductDto.companyIdx,
+        option: getCachedMainProductDto.option,
+    });
+
+    const productList = await selectProductsByIdxList(getCachedMainProductDto.account, productIdxList.productIdxList);
+
+    if (productList.length === 0) {
+        throw new NotFoundException("no products");
+    }
+
+    const eventList = await selectEvents();
+    if (eventList.length === 0) {
+        throw new NotFoundException("no events");
+    }
+
+    const eventMap = eventList.reduce((acc, event) => {
+        acc[event.productIdx] = event.eventInfo;
+        return acc;
+    }, {});
+
+    const productsWithEvents = productList
+        .filter((product) => eventMap[product.idx])
+        .map((product) => ({
+            ...product,
+            events: eventMap[product.idx],
+        }));
+
+    return productsWithEvents.map((product) => ProductEntity.createEntityFromDao(product));
+};
+
 module.exports = {
     getProductsAll,
     getProductByIdx,
@@ -169,4 +237,6 @@ module.exports = {
     createProduct,
     amendProduct,
     removeProduct,
+    cacheMainProduct,
+    getCachedMainProduct,
 };

@@ -40,9 +40,25 @@ const checkEmailVerification = async (checkEmailVerificationDao) => {
     return await redisClient.get(`verifiedEmails:${checkEmailVerificationDao.email}`);
 };
 
+const setMainProduct = async (setMainProductDao) => {
+    await redisClient.set(`mainProductsAt${setMainProductDao.companyIdx}Option:${setMainProductDao.option}`, JSON.stringify(setMainProductDao.productIdxList));
+};
+
+/**
+ *
+ * @param {*} getMainProductDao
+ * @returns {Promise<number[]>}
+ */
+const getMainProduct = async (getMainProductDao) => {
+    const data = await redisClient.get(`mainProductsAt${getMainProductDao.companyIdx}Option:${getMainProductDao.option}`);
+    return data ? JSON.parse(data) : [];
+};
+
 module.exports = {
     setEmailWithCode,
     setEmailVerified,
     getEmailVerification,
     checkEmailVerification,
+    setMainProduct,
+    getMainProduct,
 };

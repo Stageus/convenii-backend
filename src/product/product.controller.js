@@ -4,7 +4,7 @@ const uploadImg = require("../util/middleware/uploadImg");
 const wrapper = require("../util/module/wrapper");
 const GetProductsDto = require("./dto/GetProductsDto");
 const ProductResponseDto = require("./dto/responseDto/ProductResponseDto");
-const { getProductsAll, getProductByIdx, createProduct, amendProduct, removeProduct, getProductsMain } = require("./product.service");
+const { getProductsAll, getProductByIdx, createProduct, amendProduct, removeProduct, getProductsMain, cacheMainProduct, getCachedMainProduct } = require("./product.service");
 const GetProductsByCompanyDto = require("./dto/GetProductsByCompanyDto");
 const GetProductsBySearchDto = require("./dto/GetProductsBySearchDto");
 const GetProductByIdxDto = require("./dto/GetProductByIdxDto");
@@ -14,6 +14,7 @@ const AmendProductDto = require("./dto/AmendProductDto");
 const RemoveProductDto = require("./dto/RemoveProductDto");
 const nullResponse = require("../util/module/nullResponse");
 const { NotFoundException } = require("../util/module/Exception");
+const GetCachedMainProductDto = require("./dto/GetCachedMainProductDto");
 
 const COMPANY_SIZE = 3;
 /////////////---------------product---------/////////////////////
@@ -53,7 +54,8 @@ router.get(
         const user = req.user;
 
         try {
-            const productList = await getProductsMain(GetProductsByCompanyDto.createDto(user, req.query, req.params));
+            const productList = await getCachedMainProduct(GetCachedMainProductDto.createDto(req.user, req.params, req.query));
+
             res.status(200).send(ProductResponseDto.create(productList, user).products());
         } catch (err) {
             if (err instanceof NotFoundException) {
@@ -124,6 +126,15 @@ router.delete(
     accountAuth(2),
     wrapper(async (req, res, next) => {
         await removeProduct(RemoveProductDto.createDto(req.params));
+        res.status(204).send(nullResponse);
+    })
+);
+
+router.post(
+    "/cache/company/:companyIdx",
+    wrapper(async (req, res, next) => {
+        const { companyIdx } = req.params;
+        await cacheMainProduct({ companyIdx: companyIdx });
         res.status(204).send(nullResponse);
     })
 );
