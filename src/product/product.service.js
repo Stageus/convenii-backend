@@ -17,9 +17,6 @@ const { setMainProduct, getMainProduct } = require("../account/redis.repository"
  * @typedef {GetProductsDto|| GetProductsByCompanyDto || GetProductsBySearchDto}  ProductsDto
  */
 
-//products일때는 events에 event[]로
-//product by idx일때는 eventInfo 안에 events에 event[]로
-
 /**
  *
  * @param {ProductsDto} ProductsDto
@@ -189,7 +186,7 @@ const cacheMainProduct = async (cacheMainProductDto) => {
             offset: i,
         });
         const mainProductList = productList.map((row) => row.productIdx);
-
+        console.log(mainProductList);
         await setMainProduct({
             companyIdx: cacheMainProductDto.companyIdx,
             option: i / 10 + 1,
@@ -203,8 +200,8 @@ const getCachedMainProduct = async (getCachedMainProductDto) => {
         companyIdx: getCachedMainProductDto.companyIdx,
         option: getCachedMainProductDto.option,
     });
-
-    const productList = await selectProductsByIdxList(getCachedMainProductDto.account, productIdxList.productIdxList);
+    console.log(productIdxList);
+    const productList = await selectProductsByIdxList(getCachedMainProductDto.account, productIdxList);
 
     if (productList.length === 0) {
         throw new NotFoundException("no products");
