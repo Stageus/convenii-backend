@@ -17,7 +17,7 @@ export class RankGuard implements CanActivate {
     private readonly tokenService: TokenService,
   ) {}
 
-  canActivate(context: ExecutionContext): any {
+  canActivate(context: ExecutionContext): boolean {
     const requiredRankIdx = this.reflector.get<number>(
       'rankIdx',
       context.getHandler(),

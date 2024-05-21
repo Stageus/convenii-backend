@@ -20,7 +20,7 @@ export class AuthService {
       throw new UnauthorizedException('login fail');
     }
 
-    const passwordMatch = compareSync(signInDto.password, account.password);
+    const passwordMatch = compareSync(signInDto.pw, account.password);
 
     if (!passwordMatch) {
       throw new UnauthorizedException('login fail');

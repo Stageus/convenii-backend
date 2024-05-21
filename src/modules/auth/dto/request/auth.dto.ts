@@ -15,5 +15,5 @@ export class SignInDto {
     description: '로그인 비밀번호',
     default: 'asdf1234',
   })
-  password: string;
+  pw: string;
 }
