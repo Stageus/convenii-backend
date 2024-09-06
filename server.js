@@ -37,7 +37,7 @@ app.use((err, req, res, next) => {
     if (err.status) {
         return res.status(err.status).send(err.message);
     }
-
+	console.log(err);
     res.status(500).send("500 error, something wrong");
 });
 
