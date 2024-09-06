@@ -103,7 +103,9 @@ router.post(
     accountAuth(2),
     wrapper(async (req, res, next) => {
         await createProduct(CreateProductDto.createDto(req.file, req.body));
-
+        await cacheMainProduct({ companyIdx: 1 });
+        await cacheMainProduct({ companyIdx: 2 });
+        await cacheMainProduct({ companyIdx: 3 });
         res.status(201).send(nullResponse);
     })
 );
@@ -115,7 +117,9 @@ router.put(
     accountAuth(2),
     wrapper(async (req, res, next) => {
         await amendProduct(AmendProductDto.createDto(req.file, req.body, req.params));
-
+        await cacheMainProduct({ companyIdx: 1 });
+        await cacheMainProduct({ companyIdx: 2 });
+        await cacheMainProduct({ companyIdx: 3 });
         res.status(201).send(nullResponse);
     })
 );
@@ -126,6 +130,9 @@ router.delete(
     accountAuth(2),
     wrapper(async (req, res, next) => {
         await removeProduct(RemoveProductDto.createDto(req.params));
+        await cacheMainProduct({ companyIdx: 1 });
+        await cacheMainProduct({ companyIdx: 2 });
+        await cacheMainProduct({ companyIdx: 3 });
         res.status(204).send(nullResponse);
     })
 );
