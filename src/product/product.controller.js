@@ -100,7 +100,7 @@ router.get(
 router.post(
     "/",
     uploadImg,
-    accountAuth(2),
+    accountAuth(),
     wrapper(async (req, res, next) => {
         await createProduct(CreateProductDto.createDto(req.file, req.body));
         await cacheMainProduct({ companyIdx: 1 });
@@ -114,7 +114,7 @@ router.post(
 router.put(
     "/:productIdx",
     uploadImg,
-    accountAuth(2),
+    accountAuth(),
     wrapper(async (req, res, next) => {
         await amendProduct(AmendProductDto.createDto(req.file, req.body, req.params));
         await cacheMainProduct({ companyIdx: 1 });
@@ -127,7 +127,7 @@ router.put(
 //productIdx 삭제하기
 router.delete(
     "/:productIdx",
-    accountAuth(2),
+    accountAuth(),
     wrapper(async (req, res, next) => {
         await removeProduct(RemoveProductDto.createDto(req.params));
         await cacheMainProduct({ companyIdx: 1 });
